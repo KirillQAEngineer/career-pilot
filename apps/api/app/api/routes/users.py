@@ -24,8 +24,9 @@ def create_user(
     repository = UserRepository(db)
 
     return repository.create(
-        email=user.email,
-        full_name=user.full_name,
+    email=user.email,
+    password=user.password,
+    full_name=user.full_name,
     )
 
 

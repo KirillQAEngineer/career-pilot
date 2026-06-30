@@ -1,9 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-ENV_FILE = BASE_DIR / ".env"
-
 class Settings(BaseSettings):
     app_name: str = "CareerPilot API"
     app_version: str = "0.1.0"
@@ -11,12 +8,16 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    database_url_docker: str = ""
+
+    access_token_expire_minutes: int = 1440
+
     secret_key: str
 
     gemini_api_key: str = ""
 
     model_config = SettingsConfigDict(
-    env_file=ENV_FILE,
+    env_file=".env",
     extra="ignore",
 )
 

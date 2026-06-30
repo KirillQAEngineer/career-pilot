@@ -2,8 +2,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
+import os
 
-engine = create_engine(settings.database_url)
+database_url = (
+    settings.database_url_docker
+    if os.path.exists("/.dockerenv")
+    else settings.database_url
+)
+
+engine = create_engine(
+    database_url,
+    pool_pre_ping=True,
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -13,7 +23,6 @@ SessionLocal = sessionmaker(
 
 
 def get_db():
-
     db = SessionLocal()
 
     try:
