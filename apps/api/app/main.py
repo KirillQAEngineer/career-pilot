@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 
 from app.api.health import router as health_router
+from app.core.config import settings
 
 app = FastAPI(
-    title="CareerPilot API",
-    description="Backend API for CareerPilot",
-    version="0.1.0",
+    title=settings.app_name,
+    version=settings.app_version,
 )
 
 app.include_router(health_router)
