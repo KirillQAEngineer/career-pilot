@@ -31,4 +31,6 @@ uvicorn==0.49.0
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.0
-pwdlib[argon2]==0.3.0
+pwdlib
+argon2-cffi
+requests==2.32.5

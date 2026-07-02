@@ -32,3 +32,14 @@ class ResumeProfileRepository:
         self.db.refresh(db_profile)
 
         return db_profile
+
+    def get_by_user_id(
+        self,
+        user_id: int,
+    ) -> ResumeProfile | None:
+
+        return (
+            self.db.query(ResumeProfile)
+            .filter(ResumeProfile.user_id == user_id)
+            .first()
+        )

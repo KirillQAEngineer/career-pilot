@@ -4,6 +4,10 @@ from app.core.config import settings
 from app.services.ai.base import AIProvider
 from app.schemas.analysis import AnalysisResponse
 from app.schemas.resume_profile import ResumeProfile
+from google.genai import types
+
+from app.prompts.job_match import JOB_MATCH_PROMPT
+from app.schemas.job_match import JobMatch
 
 
 class GeminiProvider(AIProvider):
@@ -35,3 +39,30 @@ class GeminiProvider(AIProvider):
             english_level="B1",
             preferred_roles=["QA Engineer"],
         )
+    
+    def analyze_job(
+    self,
+    resume_text: str,
+    job_description: str,
+) -> JobMatch:
+
+        response = self.client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=f"""
+{JOB_MATCH_PROMPT}
+
+Resume:
+
+{resume_text}
+
+Job description:
+
+{job_description}
+""",
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=JobMatch,
+        ),
+    )
+
+        return response.parsed
