@@ -43,3 +43,12 @@ class ResumeProfileRepository:
             .filter(ResumeProfile.user_id == user_id)
             .first()
         )
+    
+    def delete(
+    self,
+    profile: ResumeProfile,
+):
+
+        self.db.delete(profile)
+
+        self.db.commit()

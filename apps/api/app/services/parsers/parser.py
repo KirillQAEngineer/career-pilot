@@ -1,15 +1,17 @@
-from app.services.parsers.pdf_parser import extract_pdf_text
+from pathlib import Path
+
 from app.services.parsers.docx_parser import extract_docx_text
+from app.services.parsers.pdf_parser import extract_pdf_text
 
 
-def extract_text(filename: str, content: bytes) -> str:
+def extract_text(file_path: Path) -> str:
 
-    filename = filename.lower()
+    suffix = file_path.suffix.lower()
 
-    if filename.endswith(".pdf"):
-        return extract_pdf_text(content)
+    if suffix == ".pdf":
+        return extract_pdf_text(file_path)
 
-    if filename.endswith(".docx"):
-        return extract_docx_text(content)
+    if suffix == ".docx":
+        return extract_docx_text(file_path)
 
     raise ValueError("Unsupported file type")

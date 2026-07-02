@@ -1,9 +1,10 @@
-from io import BytesIO
+from pathlib import Path
+
 from docx import Document
 
 
-def extract_docx_text(file_bytes: bytes) -> str:
-    document = Document(BytesIO(file_bytes))
+def extract_docx_text(file_path: Path) -> str:
+    document = Document(file_path)
 
     return "\n".join(
         paragraph.text

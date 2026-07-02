@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
 
+    upload_dir: str = "uploads"
+
     model_config = SettingsConfigDict(
     env_file=".env",
     extra="ignore",

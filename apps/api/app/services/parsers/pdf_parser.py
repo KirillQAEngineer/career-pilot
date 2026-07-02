@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import fitz
 
 
-def extract_pdf_text(file_bytes: bytes) -> str:
+def extract_pdf_text(file_path: Path) -> str:
     text = ""
 
-    with fitz.open(stream=file_bytes, filetype="pdf") as pdf:
+    with fitz.open(file_path) as pdf:
         for page in pdf:
             text += page.get_text()
 
