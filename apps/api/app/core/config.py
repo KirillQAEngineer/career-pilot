@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     upload_dir: str = "uploads"
 
+    jooble_api_key: str
+
     model_config = SettingsConfigDict(
     env_file=".env",
     extra="ignore",

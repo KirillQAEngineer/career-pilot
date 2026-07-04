@@ -10,6 +10,7 @@ from app.schemas.job_match_request import JobMatchRequest
 from app.services.ai.factory import get_ai
 from app.services.jobs.factory import get_jobs_provider
 from app.services.application.job_match_service import JobMatchService
+from app.services.application.job_score_service import JobScoreService
 
 router = APIRouter(
     prefix="/jobs",
@@ -60,6 +61,17 @@ def search_jobs(
     provider = get_jobs_provider()
 
     jobs = provider.search(
-    profile.profession,
+        profile.profession,
     )
+
+    score_service = JobScoreService()
+
+    jobs.sort(
+        key=lambda job: score_service.calculate(
+            profile,
+            job,
+        ),
+        reverse=True,
+    )
+
     return jobs[:limit]
