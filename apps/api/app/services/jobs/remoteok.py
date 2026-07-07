@@ -6,24 +6,26 @@ from app.services.jobs.base import JobProvider
 
 class RemoteOKProvider(JobProvider):
 
-    def search(self, query: str) -> list[Job]:
-        
-        print("=== REMOTEOK ===")
+    def search(
+        self,
+        query: str,
+    ) -> list[Job]:
 
         response = requests.get(
             "https://remoteok.com/api",
             headers={
                 "User-Agent": "CareerPilot"
             },
+            timeout=20,
         )
+
+        response.raise_for_status()
 
         data = response.json()
 
         jobs = []
 
         for item in data[1:]:
-
-            print(item.get("position"))
 
             title = item.get("position", "")
 

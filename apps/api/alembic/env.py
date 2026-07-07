@@ -1,17 +1,18 @@
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import create_engine, pool
 
 from app.core.config import settings
 from app.db.models.base import Base
 
-# импортируем модели, чтобы Alembic их увидел
-from app.db.models.user import User
+# Import every SQLAlchemy model that belongs to Base.metadata.
+# Alembic autogenerate can compare only models imported here.
+from app.db.models.job_interaction import JobInteraction  # noqa: F401
+from app.db.models.resume_profile import ResumeProfile  # noqa: F401
+from app.db.models.user import User  # noqa: F401
 
-import os
 
 database_url = (
     settings.database_url_docker
@@ -32,7 +33,10 @@ def run_migrations_offline() -> None:
         url=database_url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={
+            "paramstyle": "named",
+        },
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -40,11 +44,10 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-
     print("=" * 50)
     print(database_url)
     print("=" * 50)
-    
+
     connectable = create_engine(
         database_url,
         poolclass=pool.NullPool,

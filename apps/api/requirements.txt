@@ -56,3 +56,5 @@ uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.0
 pwdlib[argon2]==0.3.0
+beautifulsoup4==4.12.2
+lxml==6.1.1

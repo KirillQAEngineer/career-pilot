@@ -17,8 +17,6 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    print("=" * 50)
-    print("TOKEN:", token)
 
     try:
         payload = jwt.decode(
@@ -27,25 +25,16 @@ def get_current_user(
             algorithms=["HS256"],
         )
 
-        print("PAYLOAD:", payload)
-
         user_id = int(payload["sub"])
 
-        print("USER_ID:", user_id)
-
-    except Exception as e:
+    except JWTError as e:
         print("JWT ERROR:", repr(e))
         raise HTTPException(401, "Invalid token")
 
     user = UserRepository(db).get(user_id)
 
-    print("USER:", user)
-
     if not user:
         print("USER NOT FOUND")
         raise HTTPException(401, "User not found")
-
-    print("SUCCESS")
-    print("=" * 50)
 
     return user

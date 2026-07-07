@@ -9,6 +9,8 @@ from google.genai import types
 from app.prompts.job_match import JOB_MATCH_PROMPT
 from app.schemas.job_match import JobMatch
 from app.schemas.job import Job
+from app.prompts.resume_profile import RESUME_PROFILE_PROMPT
+from app.prompts.resume_review import RESUME_REVIEW_PROMPT
 
 
 class GeminiProvider(AIProvider):
@@ -17,58 +19,73 @@ class GeminiProvider(AIProvider):
         self.client = genai.Client(
             api_key=settings.gemini_api_key,
         )
+        
+    def _generate_json(
+        self,
+        prompt: str,
+        schema,
+    ):
 
-    def analyze_resume(self, text: str) -> AnalysisResponse:
-
-        # Пока заглушка
-        return AnalysisResponse(
-            summary="Gemini connected",
-            score=100,
-            strengths=["Gemini API works"],
-            weaknesses=[],
-            recommendations=[],
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schema,
+            ),
         )
 
-    def build_resume_profile(self, text: str) -> ResumeProfile:
+        return response.parsed
 
-        # Пока заглушка
-        return ResumeProfile(
-            profession="QA Engineer",
-            level="Senior",
-            skills=["Python"],
-            technologies=["Docker"],
-            english_level="B1",
-            preferred_roles=["QA Engineer"],
+    def analyze_resume(
+        self,
+        text: str,
+    ) -> AnalysisResponse:
+
+        return self._generate_json(
+            prompt=f"""
+    {RESUME_REVIEW_PROMPT}
+
+    {text}
+    """,
+            schema=AnalysisResponse,
+        )
+
+    def build_resume_profile(
+        self,
+        text: str,
+    ) -> ResumeProfile:
+
+        return self._generate_json(
+            prompt=f"""
+    {RESUME_PROFILE_PROMPT}
+
+    {text}
+    """,
+            schema=ResumeProfile,
         )
     
     def match_job(
-    self,
-    resume_text: str,
-    job: Job,
-) -> JobMatch:
+        self,
+        resume_text: str,
+        job: Job,
+    ) -> JobMatch:
 
-        response = self.client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"""
-        {JOB_MATCH_PROMPT}
+        return self._generate_json(
+            prompt=f"""
+    {JOB_MATCH_PROMPT}
 
-        Resume:
+    Resume:
 
-        {resume_text}
+    {resume_text}
 
-        Job:
+    Job:
 
-        Title: {job.title}
-        Company: {job.company}
-        Location: {job.location}
-        Source: {job.source}
-        URL: {job.url}
-    
-        """,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=JobMatch,
-        ),
-    )
-
-        return response.parsed
+    Title: {job.title}
+    Company: {job.company}
+    Location: {job.location}
+    Source: {job.source}
+    URL: {job.url}
+    """,
+            schema=JobMatch,
+        )

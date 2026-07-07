@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     secret_key: str
 
     gemini_api_key: str = ""
+    
+    adzuna_app_id: str = ""
+    
+    adzuna_app_key: str = ""
 
     upload_dir: str = "uploads"
 

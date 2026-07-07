@@ -1,40 +1,73 @@
 from app.schemas.job import Job
-from app.schemas.resume_profile import ResumeProfile
 
 
 class JobScoreService:
 
-    def calculate(
-    self,
-    profile: ResumeProfile,
-    job: Job,
-) -> int:
+    def score(self, resume_text: str, job: Job) -> float:
+
+        resume = resume_text.lower()
+        title = job.title.lower()
 
         score = 0
 
-        text = " ".join([
-            job.title,
-            job.company,
-            job.location,
-            job.source,
-        ]).lower()
+        # 1. совпадение по роли
+        role_keywords = [
+            "engineer",
+            "developer",
+            "backend",
+            "frontend",
+            "full stack",
+            "data scientist",
+            "python",
+            "software",
+        ]
 
-        if profile.profession.lower() in text:
-            score += 40
+        for kw in role_keywords:
+            if kw in resume and kw in title:
+                score += 40
 
-        if profile.level.lower() in text:
-            score += 20
+        # 2. seniority
+        seniority_map = {
+            "junior": 10,
+            "middle": 20,
+            "mid": 20,
+            "senior": 30,
+            "lead": 35,
+            "staff": 40,
+        }
 
-        for skill in profile.skills:
-            if skill.lower() in text:
-                score += 8
+        for k, v in seniority_map.items():
+            if k in title:
+                score += v
 
-        for technology in profile.technologies:
-            if technology.lower() in text:
-                score += 6
+        # 3. tech boost
+        tech_keywords = [
+            "python",
+            "java",
+            "golang",
+            "react",
+            "fastapi",
+            "django",
+            "aws",
+            "docker",
+        ]
 
-        for role in profile.preferred_roles:
-            if role.lower() in text:
-                score += 10
+        for kw in tech_keywords:
+            if kw in resume and kw in title:
+                score += 20
 
-        return min(score, 100)
+        # 4. spam penalty
+        spam_keywords = [
+            "casino",
+            "tester",
+            "adult",
+            "escort",
+            "crypto trader",
+            "sales call",
+        ]
+
+        for kw in spam_keywords:
+            if kw in title:
+                score -= 50
+
+        return max(score, 0)
