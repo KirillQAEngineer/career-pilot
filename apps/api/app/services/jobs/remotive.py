@@ -28,7 +28,6 @@ class RemotiveProvider(JobProvider):
         jobs = []
 
         for item in data.get("jobs", []):
-
             jobs.append(
                 Job(
                     title=item["title"],
@@ -36,6 +35,7 @@ class RemotiveProvider(JobProvider):
                     location=item["candidate_required_location"],
                     url=item["url"],
                     source="Remotive",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

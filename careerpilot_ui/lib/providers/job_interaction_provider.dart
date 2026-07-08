@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/api_client.dart';
 import '../models/job.dart';
+import 'jobs_provider.dart';
 import 'saved_jobs_provider.dart';
 
 class JobInteractionNotifier extends Notifier<Set<String>> {
@@ -23,9 +24,7 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
 
       state = {
         ...state,
-        ...savedJobs
-            .where((job) => job.url.isNotEmpty)
-            .map((job) => job.url),
+        ...savedJobs.where((job) => job.url.isNotEmpty).map((job) => job.url),
       };
     } on DioException {
       // Saved state remains unchanged if the request fails.
@@ -46,16 +45,40 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
           'job_title': job.title,
           'job_company': job.company,
           'job_url': job.url,
+          'job_source': job.source,
+          'job_external_id': job.externalId,
           'action': 'like',
         },
       );
 
-      state = {
-        ...state,
-        job.url,
-      };
+      state = {...state, job.url};
 
       ref.invalidate(savedJobsProvider);
+      ref.invalidate(jobsProvider);
+
+      return true;
+    } on DioException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> dislikeJob(Job job) async {
+    try {
+      await ApiClient.dio.post(
+        '/jobs/interact',
+        data: {
+          'job_title': job.title,
+          'job_company': job.company,
+          'job_url': job.url,
+          'job_source': job.source,
+          'job_external_id': job.externalId,
+          'action': 'dislike',
+        },
+      );
+
+      ref.invalidate(jobsProvider);
 
       return true;
     } on DioException {
@@ -69,9 +92,7 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
     try {
       await ApiClient.dio.delete(
         '/jobs/saved',
-        queryParameters: {
-          'job_url': jobUrl,
-        },
+        queryParameters: {'job_url': jobUrl},
       );
 
       state = {
@@ -92,5 +113,5 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
 
 final jobInteractionProvider =
     NotifierProvider<JobInteractionNotifier, Set<String>>(
-  JobInteractionNotifier.new,
-);
+      JobInteractionNotifier.new,
+    );

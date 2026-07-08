@@ -26,7 +26,6 @@ class ZarplataProvider(JobProvider):
         jobs = []
 
         for item in data.get("items", []):
-
             jobs.append(
                 Job(
                     title=item.get("title", ""),
@@ -34,6 +33,7 @@ class ZarplataProvider(JobProvider):
                     location=item.get("area", "Remote"),
                     url=item.get("url", ""),
                     source="Zarplata",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

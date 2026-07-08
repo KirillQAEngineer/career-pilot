@@ -28,7 +28,6 @@ class JoobleProvider(JobProvider):
         jobs = []
 
         for item in data.get("jobs", []):
-
             jobs.append(
                 Job(
                     title=item.get("title", ""),
@@ -36,6 +35,7 @@ class JoobleProvider(JobProvider):
                     location=item.get("location", "Remote"),
                     url=item.get("link", ""),
                     source="Jooble",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

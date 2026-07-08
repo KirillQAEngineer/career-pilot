@@ -7,3 +7,4 @@ class Job(BaseModel):
     location: str
     url: str
     source: str
+    external_id: str

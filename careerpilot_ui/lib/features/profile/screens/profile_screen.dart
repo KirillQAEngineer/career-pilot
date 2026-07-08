@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../providers/applied_jobs_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
+import '../../applications/screens/application_history_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -11,14 +13,13 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
+    final appliedJobsAsync = ref.watch(appliedJobsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -26,9 +27,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -36,9 +35,7 @@ class ProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         loading: () {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         },
         error: (error, stackTrace) {
           return Center(
@@ -47,19 +44,14 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                  ),
+                  const Icon(Icons.error_outline, size: 48),
                   const SizedBox(height: 16),
-                  Text(
-                    error.toString(),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(error.toString(), textAlign: TextAlign.center),
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () {
                       ref.invalidate(profileProvider);
+                      ref.invalidate(appliedJobsProvider);
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -70,10 +62,20 @@ class ProfileScreen extends ConsumerWidget {
           );
         },
         data: (profile) {
+          final applicationCount = appliedJobsAsync.maybeWhen(
+            data: (items) => items.length,
+            orElse: () => null,
+          );
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(profileProvider);
-              await ref.read(profileProvider.future);
+              ref.invalidate(appliedJobsProvider);
+
+              await Future.wait([
+                ref.read(profileProvider.future),
+                ref.read(appliedJobsProvider.future),
+              ]);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -89,9 +91,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   profile.profession.isEmpty
                       ? 'Profession not specified'
@@ -102,90 +102,85 @@ class ProfileScreen extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
-                  profile.level.isEmpty
-                      ? 'Level not specified'
-                      : profile.level,
+                  profile.level.isEmpty ? 'Level not specified' : profile.level,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.send_outlined),
+                    title: const Text('Application History'),
+                    subtitle: Text(
+                      applicationCount == null
+                          ? 'Loading applications...'
+                          : '$applicationCount applications',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ApplicationHistoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 _ProfileSection(
                   icon: Icons.badge_outlined,
                   title: 'Preferred Roles',
                   value: profile.preferredRoles,
                   emptyValue: 'No preferred roles specified',
                 ),
-
                 _ProfileSection(
                   icon: Icons.psychology_outlined,
                   title: 'Skills',
                   value: profile.skills,
                   emptyValue: 'No skills specified',
                 ),
-
                 _ProfileSection(
                   icon: Icons.code,
                   title: 'Technologies',
                   value: profile.technologies,
                   emptyValue: 'No technologies specified',
                 ),
-
                 _ProfileSection(
                   icon: Icons.language,
                   title: 'English Level',
                   value: profile.englishLevel,
                   emptyValue: 'English level not specified',
                 ),
-
                 Card(
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.description_outlined,
-                    ),
+                    leading: const Icon(Icons.description_outlined),
                     title: const Text('Resume'),
                     subtitle: Text(
                       profile.resumeText.isEmpty
                           ? 'Resume is empty'
                           : 'View resume text',
                     ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                    ),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: profile.resumeText.isEmpty
                         ? null
                         : () {
-                            _showResume(
-                              context,
-                              profile.resumeText,
-                            );
+                            _showResume(context, profile.resumeText);
                           },
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
                 OutlinedButton.icon(
                   onPressed: () async {
-                    await ref
-                        .read(authProvider.notifier)
-                        .logout();
+                    await ref.read(authProvider.notifier).logout();
                   },
                   icon: const Icon(Icons.logout),
                   label: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     child: Text('Logout'),
                   ),
                 ),
@@ -207,10 +202,7 @@ class ProfileScreen extends ConsumerWidget {
     return value[0].toUpperCase();
   }
 
-  void _showResume(
-    BuildContext context,
-    String resumeText,
-  ) {
+  void _showResume(BuildContext context, String resumeText) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -218,9 +210,7 @@ class ProfileScreen extends ConsumerWidget {
           title: const Text('Resume'),
           content: SizedBox(
             width: 600,
-            child: SingleChildScrollView(
-              child: SelectableText(resumeText),
-            ),
+            child: SingleChildScrollView(child: SelectableText(resumeText)),
           ),
           actions: [
             TextButton(
@@ -251,9 +241,7 @@ class _ProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayValue = value.trim().isEmpty
-        ? emptyValue
-        : value;
+    final displayValue = value.trim().isEmpty ? emptyValue : value;
 
     return Card(
       child: ListTile(

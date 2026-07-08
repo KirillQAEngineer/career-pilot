@@ -1,19 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
 from app.db.models.user import User
 from app.db.repositories.job_interaction_repository import (
     JobInteractionRepository,
+    build_job_identity,
+    normalize_job_url,
 )
 from app.db.repositories.resume_profile_repository import (
     ResumeProfileRepository,
 )
 from app.db.session import get_db
-
 from app.schemas.job_interaction import JobInteractionRequest
 from app.schemas.job_match_request import JobMatchRequest
-
 from app.services.application.job_match_service import JobMatchService
 from app.services.application.job_score_service import JobScoreService
 from app.services.jobs.factory import get_jobs_provider
@@ -114,6 +114,20 @@ def jobs_feed(
             detail="Resume profile not found",
         )
 
+    interaction_repository = JobInteractionRepository(db)
+
+    interacted_job_identities = (
+        interaction_repository.get_interacted_job_identities(
+            current_user.id,
+        )
+    )
+
+    legacy_interacted_job_urls = (
+        interaction_repository.get_legacy_interacted_job_urls(
+            current_user.id,
+        )
+    )
+
     provider = get_jobs_provider()
     jobs = provider.search(profile.profession)
 
@@ -122,6 +136,25 @@ def jobs_feed(
     feed = []
 
     for job in jobs:
+        job_identity = build_job_identity(
+            job.source,
+            job.external_id,
+        )
+
+        if (
+            job_identity is not None
+            and job_identity in interacted_job_identities
+        ):
+            continue
+
+        normalized_job_url = normalize_job_url(job.url)
+
+        if (
+            normalized_job_url
+            and normalized_job_url in legacy_interacted_job_urls
+        ):
+            continue
+
         score = scorer.score(
             profile.resume_text,
             job,
@@ -179,7 +212,7 @@ def saved_jobs(
 
 @router.delete("/saved")
 def delete_saved_job(
-    job_url: str = Query(...),
+    job_url: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -198,8 +231,19 @@ def delete_saved_job(
 
     return {
         "deleted": True,
-        "job_url": job_url,
     }
+
+
+@router.get("/applied")
+def applied_jobs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = JobInteractionRepository(db)
+
+    return repository.get_applied_by_user_id(
+        current_user.id,
+    )
 
 
 def _recommendation(score: float) -> str:

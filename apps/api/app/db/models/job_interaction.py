@@ -17,9 +17,10 @@ class JobInteraction(Base):
     __table_args__ = (
         UniqueConstraint(
             "user_id",
-            "job_url",
+            "job_source",
+            "job_external_id",
             "action",
-            name="uq_job_interactions_user_url_action",
+            name="uq_job_interactions_user_identity_action",
         ),
     )
 
@@ -34,6 +35,9 @@ class JobInteraction(Base):
     job_title = Column(String, index=True)
     job_company = Column(String, index=True)
     job_url = Column(String)
+
+    job_source = Column(String, nullable=True, index=True)
+    job_external_id = Column(String, nullable=True, index=True)
 
     action = Column(String)
 

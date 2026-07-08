@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:careerpilot_ui/models/job.dart';
-import 'package:careerpilot_ui/providers/jobs_provider.dart';
 import 'package:careerpilot_ui/features/feed/widgets/job_card.dart';
+import 'package:careerpilot_ui/models/job.dart';
+import 'package:careerpilot_ui/providers/job_interaction_provider.dart';
+import 'package:careerpilot_ui/providers/jobs_provider.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -14,6 +15,9 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   final TextEditingController searchController = TextEditingController();
+
+  final Set<String> _dislikingUrls = <String>{};
+  final Set<String> _hiddenUrls = <String>{};
 
   String query = '';
 
@@ -29,6 +33,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   List<Job> filterJobs(List<Job> jobs) {
     return jobs.where((job) {
+      if (_hiddenUrls.contains(job.url)) {
+        return false;
+      }
+
       final title = job.title.toLowerCase();
       final company = job.company.toLowerCase();
       final location = job.location.toLowerCase();
@@ -37,9 +45,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         final q = query.toLowerCase();
 
         final matchesSearch =
-            title.contains(q) ||
-            company.contains(q) ||
-            location.contains(q);
+            title.contains(q) || company.contains(q) || location.contains(q);
 
         if (!matchesSearch) {
           return false;
@@ -62,6 +68,45 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     }).toList();
   }
 
+  Future<void> _dislikeJob(Job job) async {
+    if (_dislikingUrls.contains(job.url)) {
+      return;
+    }
+
+    setState(() {
+      _dislikingUrls.add(job.url);
+    });
+
+    final success = await ref
+        .read(jobInteractionProvider.notifier)
+        .dislikeJob(job);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!success) {
+      setState(() {
+        _dislikingUrls.remove(job.url);
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to skip job')));
+
+      return;
+    }
+
+    setState(() {
+      _dislikingUrls.remove(job.url);
+      _hiddenUrls.add(job.url);
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Job skipped')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(jobsProvider);
@@ -70,32 +115,38 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       appBar: AppBar(
         title: const Text(
           'CareerPilot',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {
-              showSearchDialog();
-            },
+            onPressed: showSearchDialog,
           ),
         ],
       ),
       body: jobsAsync.when(
         loading: () {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         },
         error: (error, stackTrace) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(
-                error.toString(),
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48),
+                  const SizedBox(height: 16),
+                  Text(error.toString(), textAlign: TextAlign.center),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () {
+                      ref.invalidate(jobsProvider);
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
               ),
             ),
           );
@@ -106,7 +157,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(jobsProvider);
-
               await ref.read(jobsProvider.future);
             },
             child: ListView(
@@ -146,18 +196,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
                 if (query.isNotEmpty) ...[
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           'Search: "$query"',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
@@ -172,26 +218,51 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
                 ],
-
                 if (filteredJobs.isEmpty)
                   const Padding(
                     padding: EdgeInsets.only(top: 100),
                     child: Center(
                       child: Text(
                         'No jobs found',
-                        style: TextStyle(
-                          fontSize: 18,
-                        ),
+                        style: TextStyle(fontSize: 18),
                       ),
                     ),
                   )
                 else
-                  ...filteredJobs.map(
-                    (job) => JobCard(job: job),
-                  ),
+                  ...filteredJobs.map((job) {
+                    final isDisliking = _dislikingUrls.contains(job.url);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        JobCard(job: job),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                            bottom: 16,
+                          ),
+                          child: OutlinedButton.icon(
+                            onPressed: isDisliking
+                                ? null
+                                : () => _dislikeJob(job),
+                            icon: isDisliking
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.close),
+                            label: Text(isDisliking ? 'Skipping...' : 'Skip'),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
               ],
             ),
           );

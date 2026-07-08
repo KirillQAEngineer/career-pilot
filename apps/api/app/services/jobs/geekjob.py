@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -11,15 +13,20 @@ class GeekJobProvider(JobProvider):
 
     def search(self, query: str) -> list[Job]:
 
-        response = requests.get(self.URL, timeout=10)
+        response = requests.get(
+            self.URL,
+            timeout=10,
+        )
         response.raise_for_status()
 
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser",
+        )
 
         jobs = []
 
         for card in soup.select(".vacancy-card"):
-
             title = card.select_one(".title")
             company = card.select_one(".company")
 
@@ -31,13 +38,25 @@ class GeekJobProvider(JobProvider):
             if query.lower() not in title_text.lower():
                 continue
 
+            job_url = (
+                "https://geekjob.ru"
+                + title.get("href", "")
+            )
+
+            external_id = urlsplit(job_url).path.rstrip("/")
+
             jobs.append(
                 Job(
                     title=title_text,
-                    company=company.text.strip() if company else "",
+                    company=(
+                        company.text.strip()
+                        if company
+                        else ""
+                    ),
                     location="RU",
-                    url="https://geekjob.ru" + title.get("href", ""),
+                    url=job_url,
                     source="GeekJob",
+                    external_id=external_id,
                 )
             )
 

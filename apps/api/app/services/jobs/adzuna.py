@@ -31,14 +31,20 @@ class AdzunaProvider(JobProvider):
         jobs = []
 
         for item in data.get("results", []):
-
             jobs.append(
                 Job(
                     title=item.get("title", ""),
-                    company=item.get("company", {}).get("display_name", ""),
-                    location=item.get("location", {}).get("display_name", ""),
+                    company=item.get("company", {}).get(
+                        "display_name",
+                        "",
+                    ),
+                    location=item.get("location", {}).get(
+                        "display_name",
+                        "",
+                    ),
                     url=item.get("redirect_url", ""),
                     source="Adzuna",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

@@ -11,7 +11,7 @@ class SuperJobProvider(JobProvider):
     def search(self, query: str) -> list[Job]:
 
         headers = {
-            "X-Api-App-Id": "YOUR_SUPERJOB_KEY"
+            "X-Api-App-Id": "YOUR_SUPERJOB_KEY",
         }
 
         response = requests.get(
@@ -31,14 +31,17 @@ class SuperJobProvider(JobProvider):
         jobs = []
 
         for item in data.get("objects", []):
-
             jobs.append(
                 Job(
                     title=item.get("profession", ""),
                     company=item.get("firm_name", ""),
-                    location=item.get("town", {}).get("title", "Remote"),
+                    location=item.get("town", {}).get(
+                        "title",
+                        "Remote",
+                    ),
                     url=item.get("link", ""),
                     source="SuperJob",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

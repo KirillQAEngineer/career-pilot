@@ -1,6 +1,6 @@
 import requests
 
-from app.schemas import Job
+from app.schemas.job import Job
 from app.services.jobs.base import JobProvider
 
 
@@ -14,7 +14,7 @@ class RemoteOKProvider(JobProvider):
         response = requests.get(
             "https://remoteok.com/api",
             headers={
-                "User-Agent": "CareerPilot"
+                "User-Agent": "CareerPilot",
             },
             timeout=20,
         )
@@ -26,7 +26,6 @@ class RemoteOKProvider(JobProvider):
         jobs = []
 
         for item in data[1:]:
-
             title = item.get("position", "")
 
             if query.lower() not in title.lower():
@@ -39,6 +38,7 @@ class RemoteOKProvider(JobProvider):
                     location=item.get("location", "Remote"),
                     url=item.get("url", ""),
                     source="RemoteOK",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

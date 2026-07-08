@@ -26,7 +26,6 @@ class TheMuseProvider(JobProvider):
         jobs = []
 
         for item in data.get("results", []):
-
             title = item.get("name", "")
 
             if query.lower() not in title.lower():
@@ -49,8 +48,12 @@ class TheMuseProvider(JobProvider):
                     title=title,
                     company=company,
                     location=location,
-                    url=item.get("refs", {}).get("landing_page", ""),
+                    url=item.get("refs", {}).get(
+                        "landing_page",
+                        "",
+                    ),
                     source="TheMuse",
+                    external_id=str(item.get("id", "")),
                 )
             )
 

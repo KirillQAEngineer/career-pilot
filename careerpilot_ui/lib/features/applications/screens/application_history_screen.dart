@@ -2,62 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/url_launcher_utils.dart';
-import '../../../models/saved_job.dart';
-import '../../../providers/job_interaction_provider.dart';
-import '../../../providers/saved_jobs_provider.dart';
+import '../../../models/applied_job.dart';
+import '../../../providers/applied_jobs_provider.dart';
 
-class SavedScreen extends ConsumerStatefulWidget {
-  const SavedScreen({super.key});
+class ApplicationHistoryScreen extends ConsumerWidget {
+  const ApplicationHistoryScreen({super.key});
 
-  @override
-  ConsumerState<SavedScreen> createState() => _SavedScreenState();
-}
+  Future<void> _openJob(BuildContext context, AppliedJob job) async {
+    final opened = await openExternalUrl(job.url);
 
-class _SavedScreenState extends ConsumerState<SavedScreen> {
-  final Set<String> _removingUrls = <String>{};
-
-  Future<void> _removeJob(SavedJob job) async {
-    if (_removingUrls.contains(job.url)) {
+    if (!context.mounted) {
       return;
     }
 
-    setState(() {
-      _removingUrls.add(job.url);
-    });
-
-    final success = await ref
-        .read(jobInteractionProvider.notifier)
-        .unsaveJob(job.url);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _removingUrls.remove(job.url);
-    });
-
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to remove saved job')),
-      );
-
-      return;
-    }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Job removed from Saved')));
-  }
-
-  Future<void> _openJob(SavedJob job) async {
-    final success = await openExternalUrl(job.url);
-
-    if (!mounted) {
-      return;
-    }
-
-    if (!success) {
+    if (!opened) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Failed to open vacancy')));
@@ -65,17 +23,17 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final savedJobs = ref.watch(savedJobsProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appliedJobs = ref.watch(appliedJobsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Saved Jobs',
+          'Application History',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: savedJobs.when(
+      body: appliedJobs.when(
         loading: () {
           return const Center(child: CircularProgressIndicator());
         },
@@ -92,7 +50,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () {
-                      ref.invalidate(savedJobsProvider);
+                      ref.invalidate(appliedJobsProvider);
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -106,18 +64,18 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
           if (items.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(savedJobsProvider);
-                await ref.read(savedJobsProvider.future);
+                ref.invalidate(appliedJobsProvider);
+                await ref.read(appliedJobsProvider.future);
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 180),
-                  Icon(Icons.bookmark_border, size: 64),
+                  Icon(Icons.send_outlined, size: 64),
                   SizedBox(height: 16),
                   Center(
                     child: Text(
-                      'No saved jobs yet',
+                      'No applications yet',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -129,7 +87,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 32),
                       child: Text(
-                        'Jobs saved from the Feed will appear here.',
+                        'Jobs you apply to will appear here.',
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -141,8 +99,8 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(savedJobsProvider);
-              await ref.read(savedJobsProvider.future);
+              ref.invalidate(appliedJobsProvider);
+              await ref.read(appliedJobsProvider.future);
             },
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -150,13 +108,10 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final job = items[index];
-                final isRemoving = _removingUrls.contains(job.url);
 
-                return _SavedJobCard(
+                return _ApplicationCard(
                   job: job,
-                  isRemoving: isRemoving,
-                  onRemove: () => _removeJob(job),
-                  onOpen: () => _openJob(job),
+                  onOpen: () => _openJob(context, job),
                 );
               },
             ),
@@ -167,18 +122,11 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
   }
 }
 
-class _SavedJobCard extends StatelessWidget {
-  final SavedJob job;
-  final bool isRemoving;
-  final VoidCallback onRemove;
+class _ApplicationCard extends StatelessWidget {
+  final AppliedJob job;
   final VoidCallback onOpen;
 
-  const _SavedJobCard({
-    required this.job,
-    required this.isRemoving,
-    required this.onRemove,
-    required this.onOpen,
-  });
+  const _ApplicationCard({required this.job, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -199,40 +147,23 @@ class _SavedJobCard extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
             ),
             if (job.createdAt != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   const Icon(Icons.schedule, size: 18),
                   const SizedBox(width: 6),
-                  Expanded(child: Text('Saved ${_formatDate(job.createdAt!)}')),
+                  Text('Applied ${_formatDate(job.createdAt!)}'),
                 ],
               ),
             ],
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: isRemoving ? null : onRemove,
-                    icon: isRemoving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.bookmark_remove_outlined),
-                    label: Text(isRemoving ? 'Removing...' : 'Remove'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: job.url.isEmpty ? null : onOpen,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open vacancy'),
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: job.url.isEmpty ? null : onOpen,
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Open Vacancy'),
+              ),
             ),
           ],
         ),
