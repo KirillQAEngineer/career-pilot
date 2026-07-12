@@ -6,6 +6,7 @@ from app.api.routes.upload import router as upload_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.profile import router as profile_router
 from app.api.routes.jobs import router as jobs_router
+from app.api.routes.applications import router as applications_router
 
 from app.api.health import router as health_router
 from app.core.config import settings
@@ -36,3 +37,4 @@ app.include_router(upload_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(jobs_router)
+app.include_router(applications_router)

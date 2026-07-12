@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_client.dart';
 import '../../../core/utils/url_launcher_utils.dart';
 import '../../../models/job.dart';
-import '../../../providers/applied_jobs_provider.dart';
+import '../../../providers/application_provider.dart';
 
 class JobDetailsScreen extends ConsumerStatefulWidget {
   final Job job;
@@ -30,68 +28,40 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
       _isApplying = true;
     });
 
-    try {
-      await ApiClient.dio.post(
-        '/jobs/interact',
-        data: widget.job.toInteractionJson(action: 'apply'),
-      );
+    final success = await ref
+        .read(applicationProvider.notifier)
+        .apply(widget.job);
 
-      ref.invalidate(appliedJobsProvider);
+    if (!mounted) {
+      return;
+    }
 
-      try {
-        await ref.read(appliedJobsProvider.future);
-      } catch (_) {
-        // Application is already saved in backend.
-        // Loading history can be retried later.
-      }
+    setState(() {
+      _isApplying = false;
+    });
 
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isApplying = false;
-      });
-
-      final opened = await openExternalUrl(widget.job.url);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (!opened) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Application saved, but the vacancy could not be opened',
-            ),
-          ),
-        );
-      }
-    } on DioException {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isApplying = false;
-      });
-
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to save application')),
       );
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
 
-      setState(() {
-        _isApplying = false;
-      });
+      return;
+    }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to apply')));
+    final opened = await openExternalUrl(widget.job.url);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Application saved, but the vacancy could not be opened',
+          ),
+        ),
+      );
     }
   }
 
@@ -112,11 +82,13 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
-    final appliedJobsAsync = ref.watch(appliedJobsProvider);
+    final applicationsAsync = ref.watch(applicationProvider);
 
-    final isApplied = appliedJobsAsync.maybeWhen(
-      data: (items) {
-        return items.any((appliedJob) => appliedJob.url == job.url);
+    final isApplied = applicationsAsync.maybeWhen(
+      data: (applications) {
+        return applications.any(
+          (application) => application.stableJobKey == job.stableKey,
+        );
       },
       orElse: () => false,
     );

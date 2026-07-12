@@ -9,6 +9,7 @@ from app.db.models.base import Base
 
 # Import every SQLAlchemy model that belongs to Base.metadata.
 # Alembic autogenerate can compare only models imported here.
+from app.db.models.application import Application  # noqa: F401
 from app.db.models.job_interaction import JobInteraction  # noqa: F401
 from app.db.models.resume_profile import ResumeProfile  # noqa: F401
 from app.db.models.user import User  # noqa: F401

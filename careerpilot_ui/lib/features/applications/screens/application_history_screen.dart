@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/url_launcher_utils.dart';
-import '../../../models/applied_job.dart';
-import '../../../providers/applied_jobs_provider.dart';
+import '../../../models/application.dart';
+import '../../../providers/application_provider.dart';
 
 class ApplicationHistoryScreen extends ConsumerWidget {
   const ApplicationHistoryScreen({super.key});
 
-  Future<void> _openJob(BuildContext context, AppliedJob job) async {
-    final opened = await openExternalUrl(job.url);
+  Future<void> _openJob(BuildContext context, Application application) async {
+    final opened = await openExternalUrl(application.jobUrl);
 
     if (!context.mounted) {
       return;
@@ -22,18 +22,19 @@ class ApplicationHistoryScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _refreshApplications(WidgetRef ref) async {
+    await ref.read(applicationProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appliedJobs = ref.watch(appliedJobsProvider);
+    final applicationsAsync = ref.watch(applicationProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Application History',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('CRM', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: appliedJobs.when(
+      body: applicationsAsync.when(
         loading: () {
           return const Center(child: CircularProgressIndicator());
         },
@@ -50,7 +51,7 @@ class ApplicationHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () {
-                      ref.invalidate(appliedJobsProvider);
+                      ref.read(applicationProvider.notifier).refresh();
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -60,13 +61,10 @@ class ApplicationHistoryScreen extends ConsumerWidget {
             ),
           );
         },
-        data: (items) {
-          if (items.isEmpty) {
+        data: (applications) {
+          if (applications.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(appliedJobsProvider);
-                await ref.read(appliedJobsProvider.future);
-              },
+              onRefresh: () => _refreshApplications(ref),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
@@ -98,20 +96,19 @@ class ApplicationHistoryScreen extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(appliedJobsProvider);
-              await ref.read(appliedJobsProvider.future);
-            },
+            onRefresh: () => _refreshApplications(ref),
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
-              itemCount: items.length,
+              itemCount: applications.length,
               itemBuilder: (context, index) {
-                final job = items[index];
+                final application = applications[index];
 
                 return _ApplicationCard(
-                  job: job,
-                  onOpen: () => _openJob(context, job),
+                  application: application,
+                  onOpen: () {
+                    _openJob(context, application);
+                  },
                 );
               },
             ),
@@ -123,13 +120,16 @@ class ApplicationHistoryScreen extends ConsumerWidget {
 }
 
 class _ApplicationCard extends StatelessWidget {
-  final AppliedJob job;
+  final Application application;
   final VoidCallback onOpen;
 
-  const _ApplicationCard({required this.job, required this.onOpen});
+  const _ApplicationCard({required this.application, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
+    final location = application.jobLocation?.trim() ?? '';
+    final workFormat = application.jobWorkFormat?.trim() ?? '';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -138,29 +138,53 @@ class _ApplicationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              job.title.isEmpty ? 'Untitled vacancy' : job.title,
+              application.jobTitle.isEmpty
+                  ? 'Untitled vacancy'
+                  : application.jobTitle,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              job.company.isEmpty ? 'Company not specified' : job.company,
+              application.jobCompany.isEmpty
+                  ? 'Company not specified'
+                  : application.jobCompany,
               style: const TextStyle(fontSize: 16),
             ),
-            if (job.createdAt != null) ...[
+            if (location.isNotEmpty) ...[
               const SizedBox(height: 14),
               Row(
                 children: [
-                  const Icon(Icons.schedule, size: 18),
+                  const Icon(Icons.location_on_outlined, size: 18),
                   const SizedBox(width: 6),
-                  Text('Applied ${_formatDate(job.createdAt!)}'),
+                  Expanded(child: Text(location)),
                 ],
               ),
             ],
+            if (workFormat.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.work_outline, size: 18),
+                  const SizedBox(width: 6),
+                  Text(workFormat),
+                ],
+              ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.schedule, size: 18),
+                const SizedBox(width: 6),
+                Text('Applied ${_formatDate(application.createdAt)}'),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Chip(label: Text(_statusLabel(application.status))),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: job.url.isEmpty ? null : onOpen,
+                onPressed: application.jobUrl.isEmpty ? null : onOpen,
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('Open Vacancy'),
               ),
@@ -169,6 +193,18 @@ class _ApplicationCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    final normalizedStatus = status.trim().toLowerCase();
+
+    return switch (normalizedStatus) {
+      'applied' => 'Applied',
+      'interview' => 'Interview',
+      'offer' => 'Offer',
+      'rejected' => 'Rejected',
+      _ => status.isEmpty ? 'Applied' : status,
+    };
   }
 
   String _formatDate(DateTime date) {

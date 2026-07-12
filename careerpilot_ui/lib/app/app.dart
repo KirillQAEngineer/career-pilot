@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/auth/screens/login_screen.dart';
+import '../features/applications/screens/application_history_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
@@ -59,19 +60,21 @@ class _MainNavigationState extends State<MainNavigation> {
         return HomeScreen(
           onOpenFeed: () => _selectTab(1),
           onOpenSaved: () => _selectTab(2),
-          onOpenProfile: () => _selectTab(3),
+          onOpenProfile: () => _selectTab(4),
         );
       case 1:
         return const FeedScreen();
       case 2:
         return const SavedScreen();
       case 3:
+        return const ApplicationHistoryScreen();
+      case 4:
         return const ProfileScreen();
       default:
         return HomeScreen(
           onOpenFeed: () => _selectTab(1),
           onOpenSaved: () => _selectTab(2),
-          onOpenProfile: () => _selectTab(3),
+          onOpenProfile: () => _selectTab(4),
         );
     }
   }
@@ -98,6 +101,11 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.bookmark_outline),
             selectedIcon: Icon(Icons.bookmark),
             label: 'Saved',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.view_kanban_outlined),
+            selectedIcon: Icon(Icons.view_kanban),
+            label: 'CRM',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
