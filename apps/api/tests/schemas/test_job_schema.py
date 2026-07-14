@@ -4,7 +4,7 @@ from app.schemas.job import Job
 def test_job_is_backward_compatible_without_optional_metadata():
     job = Job(
         title="QA Engineer",
-        company="CareerPilot",
+        company="JobCompass",
         location="Remote",
         url="https://example.com/jobs/1",
         source="TestProvider",
@@ -18,7 +18,7 @@ def test_job_is_backward_compatible_without_optional_metadata():
 def test_job_accepts_optional_metadata():
     job = Job(
         title="Senior QA Engineer",
-        company="CareerPilot",
+        company="JobCompass",
         location="Berlin",
         url="https://example.com/jobs/2",
         source="TestProvider",

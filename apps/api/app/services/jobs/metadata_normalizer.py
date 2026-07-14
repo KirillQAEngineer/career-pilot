@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 
 class JobMetadataNormalizer:
@@ -105,6 +106,24 @@ class JobMetadataNormalizer:
             return self._to_utc_iso(parsed)
 
         except (
+            ValueError,
+            OverflowError,
+            OSError,
+        ):
+            pass
+
+        try:
+            parsed = parsedate_to_datetime(value)
+
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(
+                    tzinfo=timezone.utc,
+                )
+
+            return self._to_utc_iso(parsed)
+
+        except (
+            TypeError,
             ValueError,
             OverflowError,
             OSError,

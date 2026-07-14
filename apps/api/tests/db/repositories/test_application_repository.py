@@ -210,7 +210,15 @@ def test_get_stats_returns_zero_counts_for_user_without_applications():
 
     assert result == {
         "total_applications": 0,
+        "total_screenings": 0,
+        "total_interviews": 0,
+        "total_offers": 0,
+        "total_rejected": 0,
         "active_processes": 0,
+        "screening_in_progress": 0,
+        "interview_in_progress": 0,
+        "technical_interview_in_progress": 0,
+        "offer_in_progress": 0,
         "interviews": 0,
         "offers": 0,
         "rejected": 0,
@@ -254,7 +262,15 @@ def test_get_stats_aggregates_application_statuses():
 
     assert result == {
         "total_applications": 6,
+        "total_screenings": 1,
+        "total_interviews": 2,
+        "total_offers": 1,
+        "total_rejected": 1,
         "active_processes": 4,
+        "screening_in_progress": 1,
+        "interview_in_progress": 1,
+        "technical_interview_in_progress": 1,
+        "offer_in_progress": 1,
         "interviews": 2,
         "offers": 1,
         "rejected": 1,
@@ -305,10 +321,80 @@ def test_get_stats_only_counts_requested_user_applications():
 
     assert result == {
         "total_applications": 1,
+        "total_screenings": 0,
+        "total_interviews": 0,
+        "total_offers": 0,
+        "total_rejected": 0,
         "active_processes": 1,
+        "screening_in_progress": 0,
+        "interview_in_progress": 0,
+        "technical_interview_in_progress": 0,
+        "offer_in_progress": 0,
         "interviews": 0,
         "offers": 0,
         "rejected": 0,
     }
+
+    db.close()
+
+
+def test_analytics_adjustments_override_totals_but_not_in_progress_counts():
+    db = build_session()
+    user = create_user(db)
+
+    repository = ApplicationRepository(db)
+
+    application = repository.create_from_interaction(
+        user.id,
+        application_data(),
+    )
+    repository.update_status(user.id, application.id, "screening")
+
+    repository.update_analytics_adjustment(
+        user.id,
+        {
+            "total_applications": 12,
+            "total_screenings": 8,
+            "total_interviews": 5,
+            "total_offers": 2,
+            "total_rejected": 3,
+        },
+    )
+
+    assert repository.get_stats(user.id) == {
+        "total_applications": 12,
+        "total_screenings": 8,
+        "total_interviews": 5,
+        "total_offers": 2,
+        "total_rejected": 3,
+        "active_processes": 1,
+        "screening_in_progress": 1,
+        "interview_in_progress": 0,
+        "technical_interview_in_progress": 0,
+        "offer_in_progress": 0,
+        "interviews": 5,
+        "offers": 2,
+        "rejected": 3,
+    }
+
+    db.close()
+
+
+def test_analytics_adjustments_can_be_cleared_to_restore_automatic_totals():
+    db = build_session()
+    user = create_user(db)
+
+    repository = ApplicationRepository(db)
+
+    repository.update_analytics_adjustment(
+        user.id,
+        {"total_applications": 10},
+    )
+    repository.update_analytics_adjustment(
+        user.id,
+        {"total_applications": None},
+    )
+
+    assert repository.get_stats(user.id)["total_applications"] == 0
 
     db.close()

@@ -9,7 +9,7 @@ from app.db.repositories.job_interaction_repository import (
 def make_data() -> dict:
     return {
         "job_title": "Senior QA Engineer",
-        "job_company": "CareerPilot",
+        "job_company": "JobCompass",
         "job_url": "https://example.com/jobs/1",
         "job_location": "Berlin",
         "job_work_format": "Hybrid",
@@ -56,7 +56,7 @@ def test_existing_interaction_gets_missing_metadata() -> None:
     existing = JobInteraction(
         user_id=1,
         job_title="Senior QA Engineer",
-        job_company="CareerPilot",
+        job_company="JobCompass",
         job_url="https://example.com/jobs/1",
         job_source="TestProvider",
         job_external_id="1",
@@ -89,7 +89,7 @@ def test_existing_metadata_is_not_overwritten() -> None:
     existing = JobInteraction(
         user_id=1,
         job_title="Senior QA Engineer",
-        job_company="CareerPilot",
+        job_company="JobCompass",
         job_url="https://example.com/jobs/1",
         job_location="London",
         job_work_format="Remote",

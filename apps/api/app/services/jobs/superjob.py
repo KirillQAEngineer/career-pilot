@@ -42,6 +42,7 @@ class SuperJobProvider(JobProvider):
                     url=item.get("link", ""),
                     source="SuperJob",
                     external_id=str(item.get("id", "")),
+                    description=item.get("candidat"),
                     work_format=None,
                     published_at=(
                         str(item.get("date_published"))

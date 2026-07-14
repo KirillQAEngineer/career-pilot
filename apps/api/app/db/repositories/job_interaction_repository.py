@@ -44,6 +44,10 @@ def normalize_job_external_id(job_external_id: str) -> str:
     return job_external_id.strip()
 
 
+def normalize_job_text(value: str | None) -> str:
+    return " ".join((value or "").strip().lower().split())
+
+
 def build_job_identity(
     job_source: str,
     job_external_id: str,
@@ -78,6 +82,7 @@ class JobInteractionRepository:
             "job_location": "job_location",
             "job_work_format": "job_work_format",
             "job_published_at": "job_published_at",
+            "job_description": "job_description",
         }
 
         for model_field, data_field in metadata_fields.items():
@@ -174,8 +179,9 @@ class JobInteractionRepository:
             job_location=data.get("job_location"),
             job_work_format=data.get("job_work_format"),
             job_published_at=data.get("job_published_at"),
-            job_source=job_identity[0],
-            job_external_id=job_identity[1],
+            job_description=data.get("job_description"),
+            job_source=job_identity[0] if job_identity is not None else None,
+            job_external_id=job_identity[1] if job_identity is not None else None,
             action=action,
         )
 

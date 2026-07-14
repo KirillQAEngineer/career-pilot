@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
 from app.db.models.user import User
+from app.db.repositories.job_comment_repository import JobCommentRepository
 from app.db.repositories.job_interaction_repository import (
     JobInteractionRepository,
     build_job_identity,
@@ -13,8 +14,21 @@ from app.db.repositories.resume_profile_repository import (
 )
 from app.db.session import get_db
 from app.schemas.job_interaction import JobInteractionRequest
+from app.schemas.job_comment import JobCommentResponse, JobCommentUpsert
+from app.schemas.job_cover_letter_response import JobCoverLetterResponse
+from app.schemas.job_description_response import JobDescriptionResponse
+from app.schemas.job_match import JobMatch
 from app.schemas.job_match_request import JobMatchRequest
-from app.services.application.job_match_service import JobMatchService
+from app.schemas.job_requirements import JobRequirementsResponse
+from app.services.application.job_description_service import (
+    JobDescriptionService,
+)
+from app.services.application.job_cover_letter_service import (
+    JobCoverLetterService,
+)
+from app.services.application.job_requirements_service import (
+    JobRequirementsService,
+)
 from app.services.application.job_score_service import JobScoreService
 from app.services.jobs.factory import get_jobs_provider
 
@@ -24,7 +38,10 @@ router = APIRouter(
 )
 
 
-@router.post("/match")
+@router.post(
+    "/match",
+    response_model=JobMatch,
+)
 def match_job(
     request: JobMatchRequest,
     current_user: User = Depends(get_current_user),
@@ -40,11 +57,93 @@ def match_job(
             detail="Resume not found",
         )
 
-    matcher = JobMatchService()
-
-    return matcher.match(
+    score = JobScoreService().score(
         resume.resume_text,
         request.job,
+    )
+
+    return JobMatch(
+        job=request.job,
+        match=round(score),
+        pros=[],
+        cons=[],
+    )
+
+
+@router.post(
+    "/requirements",
+    response_model=JobRequirementsResponse,
+)
+def job_requirements(
+    request: JobMatchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = ResumeProfileRepository(db).get_by_user_id(
+        current_user.id,
+    )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume profile not found",
+        )
+
+    return JobRequirementsService().extract(
+        request.job,
+    )
+
+
+@router.post(
+    "/description",
+    response_model=JobDescriptionResponse,
+)
+def job_description(
+    request: JobMatchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = ResumeProfileRepository(db).get_by_user_id(
+        current_user.id,
+    )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume profile not found",
+        )
+
+    return JobDescriptionService().format(
+        request.job,
+    )
+
+
+@router.post(
+    "/cover-letter",
+    response_model=JobCoverLetterResponse,
+)
+def job_cover_letter(
+    request: JobMatchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = ResumeProfileRepository(db).get_by_user_id(
+        current_user.id,
+    )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume profile not found",
+        )
+
+    cover_letter = JobCoverLetterService().generate(
+        profile,
+        request.job,
+    )
+
+    return JobCoverLetterResponse(
+        cover_letter=cover_letter,
     )
 
 
@@ -207,6 +306,36 @@ def saved_jobs(
 
     return repository.get_saved_by_user_id(
         current_user.id,
+    )
+
+
+@router.get(
+    "/comments",
+    response_model=list[JobCommentResponse],
+)
+def get_job_comments(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = JobCommentRepository(db)
+
+    return repository.get_by_user_id(current_user.id)
+
+
+@router.put(
+    "/comments",
+    response_model=JobCommentResponse,
+)
+def upsert_job_comment(
+    request: JobCommentUpsert,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = JobCommentRepository(db)
+
+    return repository.upsert(
+        current_user.id,
+        request.model_dump(),
     )
 
 

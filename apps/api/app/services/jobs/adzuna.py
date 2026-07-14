@@ -45,6 +45,7 @@ class AdzunaProvider(JobProvider):
                     url=item.get("redirect_url", ""),
                     source="Adzuna",
                     external_id=str(item.get("id", "")),
+                    description=item.get("description"),
                     work_format=None,
                     published_at=item.get("created"),
                 )

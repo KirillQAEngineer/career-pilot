@@ -7,6 +7,6 @@ router = APIRouter(tags=["Health"])
 async def health_check():
     return {
         "status": "ok",
-        "service": "CareerPilot API",
+        "service": "JobCompass API",
         "version": "0.1.0",
     }

@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17
 
-    container_name: careerpilot-postgres
+    container_name: jobcompass-postgres
 
     restart: unless-stopped
 
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
 
-    container_name: careerpilot-api
+    container_name: jobcompass-api
 
     depends_on:
       - postgres

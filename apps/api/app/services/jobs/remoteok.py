@@ -14,7 +14,7 @@ class RemoteOKProvider(JobProvider):
         response = requests.get(
             "https://remoteok.com/api",
             headers={
-                "User-Agent": "CareerPilot",
+                "User-Agent": "JobCompass",
             },
             timeout=20,
         )
@@ -39,6 +39,7 @@ class RemoteOKProvider(JobProvider):
                     url=item.get("url", ""),
                     source="RemoteOK",
                     external_id=str(item.get("id", "")),
+                    description=item.get("description"),
                     work_format="Remote",
                     published_at=(
                         item.get("date")

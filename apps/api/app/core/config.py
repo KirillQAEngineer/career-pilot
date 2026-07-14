@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 class Settings(BaseSettings):
-    app_name: str = "CareerPilot API"
+    app_name: str = "JobCompass API"
     app_version: str = "0.1.0"
     debug: bool = True
 

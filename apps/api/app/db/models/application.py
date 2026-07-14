@@ -49,6 +49,7 @@ class Application(Base):
     job_location = Column(String, nullable=True)
     job_work_format = Column(String, nullable=True)
     job_published_at = Column(String, nullable=True)
+    job_description = Column(String, nullable=True)
 
     job_source = Column(String, nullable=False, index=True)
     job_external_id = Column(String, nullable=False, index=True)
@@ -72,4 +73,9 @@ class Application(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    archived_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
     )

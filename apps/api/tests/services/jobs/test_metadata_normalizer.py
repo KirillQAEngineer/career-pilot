@@ -12,7 +12,7 @@ def make_job(
 ):
     return Job(
         title=title,
-        company="CareerPilot",
+        company="JobCompass",
         location=location,
         url="https://example.com/job",
         source="TestProvider",
@@ -147,6 +147,16 @@ def test_normalizes_unix_timestamp_milliseconds():
     )
 
     assert result == "2026-07-10T10:00:00Z"
+
+
+def test_normalizes_rss_pub_date():
+    normalizer = JobMetadataNormalizer()
+
+    result = normalizer.normalize_published_at(
+        "Tue, 14 Jul 2026 03:03:10 +0000",
+    )
+
+    assert result == "2026-07-14T03:03:10Z"
 
 
 def test_invalid_date_becomes_none():

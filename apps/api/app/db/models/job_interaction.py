@@ -39,6 +39,7 @@ class JobInteraction(Base):
     job_location = Column(String, nullable=True)
     job_work_format = Column(String, nullable=True)
     job_published_at = Column(String, nullable=True)
+    job_description = Column(String, nullable=True)
 
     job_source = Column(String, nullable=True, index=True)
     job_external_id = Column(String, nullable=True, index=True)

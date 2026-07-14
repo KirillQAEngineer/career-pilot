@@ -9,6 +9,7 @@ class JobInteractionRequest(BaseModel):
     job_location: str | None = None
     job_work_format: str | None = None
     job_published_at: str | None = None
+    job_description: str | None = None
 
     job_source: str
     job_external_id: str
