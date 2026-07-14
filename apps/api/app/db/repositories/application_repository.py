@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.db.models.application import Application
@@ -67,6 +68,43 @@ class ApplicationRepository:
             .order_by(Application.updated_at.desc())
             .all()
         )
+
+    def get_stats(
+        self,
+        user_id: int,
+    ) -> dict[str, int]:
+        status_counts = dict(
+            self.db.query(
+                Application.status,
+                func.count(Application.id),
+            )
+            .filter(Application.user_id == user_id)
+            .group_by(Application.status)
+            .all()
+        )
+
+        applied = status_counts.get("applied", 0)
+        screening = status_counts.get("screening", 0)
+        interview = status_counts.get("interview", 0)
+        technical_interview = status_counts.get(
+            "technical_interview",
+            0,
+        )
+        offers = status_counts.get("offer", 0)
+        rejected = status_counts.get("rejected", 0)
+
+        return {
+            "total_applications": sum(status_counts.values()),
+            "active_processes": (
+                applied
+                + screening
+                + interview
+                + technical_interview
+            ),
+            "interviews": interview + technical_interview,
+            "offers": offers,
+            "rejected": rejected,
+        }
 
     def update_status(
         self,

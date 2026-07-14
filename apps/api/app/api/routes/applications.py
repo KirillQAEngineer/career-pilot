@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationResponse,
+    ApplicationStatsResponse,
     ApplicationStatusUpdate,
 )
 
@@ -50,6 +51,21 @@ def get_applications(
     return repository.get_by_user_id(
         current_user.id,
     )
+
+@router.get(
+    "/stats",
+    response_model=ApplicationStatsResponse,
+)
+def get_application_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = ApplicationRepository(db)
+
+    return repository.get_stats(
+        current_user.id,
+    )
+
 
 @router.patch(
     "/{application_id}/status",

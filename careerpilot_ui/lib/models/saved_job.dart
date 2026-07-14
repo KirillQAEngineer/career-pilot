@@ -1,4 +1,5 @@
 import 'package:careerpilot_ui/features/feed/models/filterable_job.dart';
+import 'package:careerpilot_ui/models/job.dart';
 
 class SavedJob implements FilterableJob {
   final int id;
@@ -8,6 +9,8 @@ class SavedJob implements FilterableJob {
   @override
   final String company;
   final String url;
+  final String source;
+  final String externalId;
   @override
   final String location;
   @override
@@ -23,6 +26,8 @@ class SavedJob implements FilterableJob {
     required this.title,
     required this.company,
     required this.url,
+    this.source = '',
+    this.externalId = '',
     required this.location,
     required this.workFormat,
     required this.publishedAt,
@@ -32,7 +37,28 @@ class SavedJob implements FilterableJob {
 
   @override
   String get stableKey {
-    return id > 0 ? 'saved::$id' : url;
+    if (source.isNotEmpty && externalId.isNotEmpty) {
+      return '$source::$externalId';
+    }
+
+    return url;
+  }
+
+  Job toJob() {
+    return Job(
+      externalId: externalId,
+      title: title,
+      company: company,
+      location: location,
+      source: source,
+      url: url,
+      workFormat: workFormat,
+      publishedAt: publishedAt,
+      score: 0,
+      whyMatch: '',
+      missingSkills: const <String>[],
+      recommendation: '',
+    );
   }
 
   factory SavedJob.fromJson(Map<String, dynamic> json) {
@@ -42,6 +68,8 @@ class SavedJob implements FilterableJob {
       title: json['job_title'] as String? ?? '',
       company: json['job_company'] as String? ?? '',
       url: json['job_url'] as String? ?? '',
+      source: json['job_source']?.toString() ?? '',
+      externalId: json['job_external_id']?.toString() ?? '',
       location: json['job_location']?.toString() ?? '',
       workFormat: json['job_work_format']?.toString(),
       publishedAt: json['job_published_at'] == null

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/utils/url_launcher_utils.dart';
 import '../../../models/saved_job.dart';
 import '../../../providers/job_interaction_provider.dart';
 import '../../../providers/saved_jobs_provider.dart';
 import '../../feed/models/job_filters.dart';
 import '../../feed/services/job_filter_service.dart';
 import '../../feed/widgets/job_filter_popups.dart';
+import '../../job/screens/job_details_screen.dart';
 import '../../job/widgets/job_metadata.dart';
 
 class SavedScreen extends ConsumerStatefulWidget {
@@ -133,23 +133,16 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
     ).showSnackBar(const SnackBar(content: Text('Job removed from Saved')));
   }
 
-  Future<void> _openJob(SavedJob job) async {
-    final success = await openExternalUrl(job.url);
-
-    if (!mounted) {
-      return;
-    }
-
-    if (!success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to open vacancy')));
-    }
-  }
-
   Future<void> _refreshSavedJobs() async {
     ref.invalidate(savedJobsProvider);
     await ref.read(savedJobsProvider.future);
+  }
+
+  void _openJob(SavedJob job) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job.toJob())),
+    );
   }
 
   @override
@@ -371,29 +364,29 @@ class _SavedJobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               job.title.isEmpty ? 'Untitled vacancy' : job.title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               job.company.isEmpty ? 'Company not specified' : job.company,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 15),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             JobMetadata(
               location: job.location,
               workFormat: job.workFormat,
               publishedAt: job.publishedAt,
             ),
             if (job.createdAt != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(Icons.schedule, size: 18),
@@ -402,7 +395,7 @@ class _SavedJobCard extends StatelessWidget {
                 ],
               ),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -418,12 +411,13 @@ class _SavedJobCard extends StatelessWidget {
                     label: Text(isRemoving ? 'Removing...' : 'Remove'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: job.url.isEmpty ? null : onOpen,
+                    key: ValueKey('saved-open-${job.stableKey}'),
+                    onPressed: onOpen,
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open vacancy'),
+                    label: const Text('Open'),
                   ),
                 ),
               ],

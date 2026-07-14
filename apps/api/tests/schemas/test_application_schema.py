@@ -5,6 +5,7 @@ from typing import get_args
 from app.db.models.application import APPLICATION_STATUSES
 from app.schemas.application import (
     ApplicationStatus,
+    ApplicationStatsResponse,
     ApplicationStatusUpdate,
 )
 
@@ -31,3 +32,18 @@ def test_application_status_contract_matches_model_statuses():
     model_statuses = set(APPLICATION_STATUSES)
 
     assert schema_statuses == model_statuses
+
+def test_application_stats_response_accepts_dashboard_counts():
+    response = ApplicationStatsResponse(
+        total_applications=10,
+        active_processes=6,
+        interviews=3,
+        offers=1,
+        rejected=2,
+    )
+
+    assert response.total_applications == 10
+    assert response.active_processes == 6
+    assert response.interviews == 3
+    assert response.offers == 1
+    assert response.rejected == 2

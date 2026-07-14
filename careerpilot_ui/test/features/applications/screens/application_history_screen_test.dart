@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:careerpilot_ui/features/applications/screens/application_history_screen.dart';
 import 'package:careerpilot_ui/features/applications/services/application_api.dart';
 import 'package:careerpilot_ui/models/application.dart';
+import 'package:careerpilot_ui/models/application_stats.dart';
 import 'package:careerpilot_ui/models/job.dart';
 import 'package:careerpilot_ui/providers/application_provider.dart';
 
@@ -16,6 +17,7 @@ class FakeApplicationApi implements ApplicationApi {
   final Dio dio = Dio();
 
   final List<Application> applications;
+  final ApplicationStats stats;
   final Completer<Application>? updateCompleter;
   final Object? updateError;
 
@@ -25,6 +27,13 @@ class FakeApplicationApi implements ApplicationApi {
 
   FakeApplicationApi({
     required this.applications,
+    this.stats = const ApplicationStats(
+      totalApplications: 1,
+      activeProcesses: 1,
+      interviews: 0,
+      offers: 0,
+      rejected: 0,
+    ),
     this.updateCompleter,
     this.updateError,
   });
@@ -32,6 +41,11 @@ class FakeApplicationApi implements ApplicationApi {
   @override
   Future<List<Application>> fetchApplications() async {
     return applications;
+  }
+
+  @override
+  Future<ApplicationStats> fetchStats() async {
+    return stats;
   }
 
   @override
@@ -108,6 +122,33 @@ Future<void> pumpScreen(WidgetTester tester, FakeApplicationApi api) async {
 }
 
 void main() {
+  testWidgets('shows CRM dashboard metrics', (tester) async {
+    final api = FakeApplicationApi(
+      applications: [makeApplication(id: 1, status: 'interview')],
+      stats: const ApplicationStats(
+        totalApplications: 12,
+        activeProcesses: 7,
+        interviews: 3,
+        offers: 1,
+        rejected: 4,
+      ),
+    );
+
+    await pumpScreen(tester, api);
+
+    expect(find.byKey(const ValueKey('application-dashboard')), findsOneWidget);
+    expect(find.text('Total Applications'), findsOneWidget);
+    expect(find.text('Active Processes'), findsOneWidget);
+    expect(find.text('Interviews'), findsOneWidget);
+    expect(find.text('Offers'), findsOneWidget);
+    expect(find.text('Rejected'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+  });
+
   testWidgets('shows all supported application statuses', (tester) async {
     final api = FakeApplicationApi(
       applications: [makeApplication(id: 1, status: 'applied')],
@@ -115,6 +156,10 @@ void main() {
 
     await pumpScreen(tester, api);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('application-status-menu-1')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('application-status-menu-1')));
     await tester.pumpAndSettle();
 
@@ -123,7 +168,7 @@ void main() {
     expect(find.text('Interview'), findsOneWidget);
     expect(find.text('Technical Interview'), findsOneWidget);
     expect(find.text('Offer'), findsOneWidget);
-    expect(find.text('Rejected'), findsOneWidget);
+    expect(find.text('Rejected'), findsWidgets);
   });
 
   testWidgets(
@@ -141,10 +186,34 @@ void main() {
 
       await pumpScreen(tester, api);
 
-      await tester.tap(find.byKey(const ValueKey('application-status-menu-1')));
+      final firstApplicationTitle = find.text('Senior QA Engineer 1');
+
+      await tester.scrollUntilVisible(
+        firstApplicationTitle,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Interview').last, warnIfMissed: false);
+      final firstStatusMenu = find.byKey(
+        const ValueKey('application-status-menu-1'),
+      );
+
+      expect(firstStatusMenu, findsOneWidget);
+
+      await tester.ensureVisible(firstStatusMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(firstStatusMenu);
+      await tester.pumpAndSettle();
+
+      final interviewMenuItem = find.widgetWithText(
+        CheckedPopupMenuItem<String>,
+        'Interview',
+      );
+
+      expect(interviewMenuItem, findsOneWidget);
+
+      await tester.tap(interviewMenuItem);
       await tester.pump();
 
       expect(api.updateStatusCallCount, 1);
@@ -195,6 +264,10 @@ void main() {
 
     await pumpScreen(tester, api);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('application-status-menu-1')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('application-status-menu-1')));
     await tester.pumpAndSettle();
 

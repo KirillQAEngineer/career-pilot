@@ -198,3 +198,117 @@ def test_update_application_status_returns_none_for_missing_application():
     assert updated is None
 
     db.close()
+
+
+def test_get_stats_returns_zero_counts_for_user_without_applications():
+    db = build_session()
+    user = create_user(db)
+
+    repository = ApplicationRepository(db)
+
+    result = repository.get_stats(user.id)
+
+    assert result == {
+        "total_applications": 0,
+        "active_processes": 0,
+        "interviews": 0,
+        "offers": 0,
+        "rejected": 0,
+    }
+
+    db.close()
+
+
+def test_get_stats_aggregates_application_statuses():
+    db = build_session()
+    user = create_user(db)
+
+    repository = ApplicationRepository(db)
+
+    statuses = [
+        "applied",
+        "screening",
+        "interview",
+        "technical_interview",
+        "offer",
+        "rejected",
+    ]
+
+    for index, status in enumerate(statuses, start=1):
+        data = application_data()
+        data["job_external_id"] = str(index)
+        data["job_url"] = f"https://example.com/jobs/{index}"
+
+        application = repository.create_from_interaction(
+            user.id,
+            data,
+        )
+
+        repository.update_status(
+            user.id,
+            application.id,
+            status,
+        )
+
+    result = repository.get_stats(user.id)
+
+    assert result == {
+        "total_applications": 6,
+        "active_processes": 4,
+        "interviews": 2,
+        "offers": 1,
+        "rejected": 1,
+    }
+
+    db.close()
+
+
+def test_get_stats_only_counts_requested_user_applications():
+    db = build_session()
+    first_user = create_user(db)
+
+    second_user = User(
+        email="second-application-test@example.com",
+        hashed_password="test-password",
+        full_name="Second Application Test User",
+    )
+
+    db.add(second_user)
+    db.commit()
+    db.refresh(second_user)
+
+    repository = ApplicationRepository(db)
+
+    first_data = application_data()
+    first_data["job_external_id"] = "first-user-job"
+
+    repository.create_from_interaction(
+        first_user.id,
+        first_data,
+    )
+
+    second_data = application_data()
+    second_data["job_external_id"] = "second-user-job"
+
+    second_application = repository.create_from_interaction(
+        second_user.id,
+        second_data,
+    )
+
+    repository.update_status(
+        second_user.id,
+        second_application.id,
+        "offer",
+    )
+
+    result = repository.get_stats(first_user.id)
+
+    assert result == {
+        "total_applications": 1,
+        "active_processes": 1,
+        "interviews": 0,
+        "offers": 0,
+        "rejected": 0,
+    }
+
+    db.close()

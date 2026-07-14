@@ -31,6 +31,14 @@ class ApplicationStatusUpdate(BaseModel):
     status: ApplicationStatus
 
 
+class ApplicationStatsResponse(BaseModel):
+    total_applications: int
+    active_processes: int
+    interviews: int
+    offers: int
+    rejected: int
+
+
 class ApplicationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

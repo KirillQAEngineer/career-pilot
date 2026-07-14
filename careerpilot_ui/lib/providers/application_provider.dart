@@ -4,11 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:careerpilot_ui/core/network/api_client.dart';
 import 'package:careerpilot_ui/features/applications/services/application_api.dart';
 import 'package:careerpilot_ui/models/application.dart';
+import 'package:careerpilot_ui/models/application_stats.dart';
 import 'package:careerpilot_ui/models/job.dart';
+import 'package:careerpilot_ui/models/saved_job.dart';
 
 final applicationApiProvider = Provider<ApplicationApi>(
   (ref) => ApplicationApi(ApiClient.dio),
 );
+
+final applicationStatsProvider = FutureProvider<ApplicationStats>((ref) {
+  final api = ref.watch(applicationApiProvider);
+
+  return api.fetchStats();
+});
 
 class ApplicationNotifier extends AsyncNotifier<List<Application>> {
   ApplicationApi get _api => ref.read(applicationApiProvider);
@@ -29,6 +37,10 @@ class ApplicationNotifier extends AsyncNotifier<List<Application>> {
     );
   }
 
+  Future<bool> applySavedJob(SavedJob savedJob) {
+    return apply(savedJob.toJob());
+  }
+
   Future<bool> apply(Job job) async {
     if (isApplied(job)) {
       return true;
@@ -46,6 +58,8 @@ class ApplicationNotifier extends AsyncNotifier<List<Application>> {
       if (!alreadyExists) {
         state = AsyncData([application, ...currentApplications]);
       }
+
+      ref.invalidate(applicationStatsProvider);
 
       return true;
     } on DioException {
@@ -85,6 +99,8 @@ class ApplicationNotifier extends AsyncNotifier<List<Application>> {
 
       state = AsyncData(updatedApplications);
 
+      ref.invalidate(applicationStatsProvider);
+
       return true;
     } on DioException {
       return false;
@@ -97,6 +113,8 @@ class ApplicationNotifier extends AsyncNotifier<List<Application>> {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(_api.fetchApplications);
+
+    ref.invalidate(applicationStatsProvider);
   }
 }
 

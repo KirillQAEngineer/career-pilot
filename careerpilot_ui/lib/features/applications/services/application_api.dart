@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:careerpilot_ui/models/application.dart';
+import 'package:careerpilot_ui/models/application_stats.dart';
 import 'package:careerpilot_ui/models/job.dart';
 
 class ApplicationApi {
@@ -19,6 +20,14 @@ class ApplicationApi {
               Application.fromJson(Map<String, dynamic>.from(item as Map)),
         )
         .toList();
+  }
+
+  Future<ApplicationStats> fetchStats() async {
+    final response = await dio.get('/applications/stats');
+
+    return ApplicationStats.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
   }
 
   Future<Application> createApplication(Job job) async {

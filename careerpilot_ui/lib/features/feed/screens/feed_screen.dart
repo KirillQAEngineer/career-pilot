@@ -372,33 +372,10 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
                 ...filteredJobs.map((job) {
                   final isDisliking = _dislikingJobKeys.contains(job.stableKey);
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      JobCard(job: job),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: 8,
-                          right: 8,
-                          bottom: 16,
-                        ),
-                        child: OutlinedButton.icon(
-                          onPressed: isDisliking
-                              ? null
-                              : () => _dislikeJob(job),
-                          icon: isDisliking
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.close),
-                          label: Text(isDisliking ? 'Skipping...' : 'Skip'),
-                        ),
-                      ),
-                    ],
+                  return JobCard(
+                    job: job,
+                    isSkipping: isDisliking,
+                    onSkip: () => _dislikeJob(job),
                   );
                 }),
             ],

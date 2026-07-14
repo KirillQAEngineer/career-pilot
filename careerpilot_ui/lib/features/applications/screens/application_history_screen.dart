@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/url_launcher_utils.dart';
 import '../../../models/application.dart';
+import '../../../models/application_stats.dart';
 import '../../../providers/application_provider.dart';
+import '../../job/widgets/job_metadata.dart';
 import '../models/application_status.dart';
+import '../services/application_sort_service.dart';
 
 class ApplicationHistoryScreen extends ConsumerStatefulWidget {
   const ApplicationHistoryScreen({super.key});
@@ -17,6 +20,7 @@ class ApplicationHistoryScreen extends ConsumerStatefulWidget {
 class _ApplicationHistoryScreenState
     extends ConsumerState<ApplicationHistoryScreen> {
   final Set<int> _updatingApplicationIds = <int>{};
+  final ApplicationSortService _sortService = const ApplicationSortService();
 
   Future<void> _openJob(Application application) async {
     final opened = await openExternalUrl(application.jobUrl);
@@ -34,6 +38,8 @@ class _ApplicationHistoryScreenState
 
   Future<void> _refreshApplications() async {
     await ref.read(applicationProvider.notifier).refresh();
+
+    await ref.read(applicationStatsProvider.future);
   }
 
   Future<void> _updateApplicationStatus(
@@ -71,6 +77,7 @@ class _ApplicationHistoryScreenState
   @override
   Widget build(BuildContext context) {
     final applicationsAsync = ref.watch(applicationProvider);
+    final statsAsync = ref.watch(applicationStatsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -102,16 +109,20 @@ class _ApplicationHistoryScreenState
           );
         },
         data: (applications) {
-          if (applications.isEmpty) {
+          final sortedApplications = _sortService.sort(applications);
+
+          if (sortedApplications.isEmpty) {
             return RefreshIndicator(
               onRefresh: _refreshApplications,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 180),
-                  Icon(Icons.send_outlined, size: 64),
-                  SizedBox(height: 16),
-                  Center(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _ApplicationDashboard(statsAsync: statsAsync),
+                  const SizedBox(height: 80),
+                  const Icon(Icons.send_outlined, size: 64),
+                  const SizedBox(height: 16),
+                  const Center(
                     child: Text(
                       'No applications yet',
                       style: TextStyle(
@@ -120,8 +131,8 @@ class _ApplicationHistoryScreenState
                       ),
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Center(
+                  const SizedBox(height: 8),
+                  const Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 32),
                       child: Text(
@@ -140,9 +151,16 @@ class _ApplicationHistoryScreenState
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
-              itemCount: applications.length,
+              itemCount: sortedApplications.length + 1,
               itemBuilder: (context, index) {
-                final application = applications[index];
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: _ApplicationDashboard(statsAsync: statsAsync),
+                  );
+                }
+
+                final application = sortedApplications[index - 1];
 
                 return _ApplicationCard(
                   application: application,
@@ -163,6 +181,157 @@ class _ApplicationHistoryScreenState
   }
 }
 
+class _ApplicationDashboard extends StatelessWidget {
+  final AsyncValue<ApplicationStats> statsAsync;
+
+  const _ApplicationDashboard({required this.statsAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return statsAsync.when(
+      loading: () {
+        return const Card(
+          key: ValueKey('application-dashboard-loading'),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        );
+      },
+      error: (error, stackTrace) {
+        return const Card(
+          key: ValueKey('application-dashboard-error'),
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Text(
+              'Failed to load CRM statistics',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
+      data: (stats) {
+        final metrics = [
+          (
+            key: 'total',
+            label: 'Total Applications',
+            value: stats.totalApplications,
+            icon: Icons.send_outlined,
+          ),
+          (
+            key: 'active',
+            label: 'Active Processes',
+            value: stats.activeProcesses,
+            icon: Icons.autorenew,
+          ),
+          (
+            key: 'interviews',
+            label: 'Interviews',
+            value: stats.interviews,
+            icon: Icons.groups_outlined,
+          ),
+          (
+            key: 'offers',
+            label: 'Offers',
+            value: stats.offers,
+            icon: Icons.celebration_outlined,
+          ),
+          (
+            key: 'rejected',
+            label: 'Rejected',
+            value: stats.rejected,
+            icon: Icons.cancel_outlined,
+          ),
+        ];
+
+        return Column(
+          key: const ValueKey('application-dashboard'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Overview',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final cardWidth = width >= 900
+                    ? (width - 32) / 3
+                    : width >= 560
+                    ? (width - 16) / 2
+                    : width;
+
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: metrics.map((metric) {
+                    return SizedBox(
+                      width: cardWidth,
+                      child: _ApplicationMetricCard(
+                        metricKey: metric.key,
+                        label: metric.label,
+                        value: metric.value,
+                        icon: metric.icon,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ApplicationMetricCard extends StatelessWidget {
+  final String metricKey;
+  final String label;
+  final int value;
+  final IconData icon;
+
+  const _ApplicationMetricCard({
+    required this.metricKey,
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: ValueKey('application-metric-$metricKey'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(icon, size: 28),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value.toString(),
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(label),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ApplicationCard extends StatelessWidget {
   final Application application;
   final bool isUpdating;
@@ -178,13 +347,10 @@ class _ApplicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = application.jobLocation?.trim() ?? '';
-    final workFormat = application.jobWorkFormat?.trim() ?? '';
-
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -192,42 +358,20 @@ class _ApplicationCard extends StatelessWidget {
               application.jobTitle.isEmpty
                   ? 'Untitled vacancy'
                   : application.jobTitle,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               application.jobCompany.isEmpty
                   ? 'Company not specified'
                   : application.jobCompany,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 15),
             ),
-            if (location.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined, size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(location)),
-                ],
-              ),
-            ],
-            if (workFormat.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.work_outline, size: 18),
-                  const SizedBox(width: 6),
-                  Text(workFormat),
-                ],
-              ),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.schedule, size: 18),
-                const SizedBox(width: 6),
-                Text('Applied ${_formatDate(application.createdAt)}'),
-              ],
+            const SizedBox(height: 8),
+            JobMetadata(
+              location: application.jobLocation ?? '',
+              workFormat: application.jobWorkFormat,
+              publishedAt: _parsePublishedAt(application.jobPublishedAt),
             ),
             const SizedBox(height: 10),
             Row(
@@ -254,25 +398,44 @@ class _ApplicationCard extends StatelessWidget {
                       }).toList();
                     },
                     child: Chip(
+                      visualDensity: VisualDensity.compact,
                       label: Text(applicationStatusLabel(application.status)),
                       avatar: const Icon(Icons.arrow_drop_down, size: 18),
                     ),
                   ),
+                const SizedBox(width: 12),
+                const Icon(Icons.schedule, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text('Applied ${_formatDate(application.createdAt)}'),
+                ),
               ],
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: application.jobUrl.isEmpty ? null : onOpen,
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Open Vacancy'),
-              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Spacer(),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: application.jobUrl.isEmpty ? null : onOpen,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Open'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  DateTime? _parsePublishedAt(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(value);
   }
 
   String _formatDate(DateTime date) {
