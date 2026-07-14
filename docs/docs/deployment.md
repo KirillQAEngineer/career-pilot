@@ -5,7 +5,11 @@ title: Deployment
 
 # Deployment
 
-На текущем этапе JobCompass публикует только статический frontend и документацию через GitHub Pages. Backend и база данных остаются локальными.
+JobCompass публикуется в три части:
+
+- GitHub Pages - статический Flutter Web frontend и Docusaurus документация.
+- Render - публичный FastAPI backend.
+- Supabase - публичная PostgreSQL база данных.
 
 ## Что публикуется
 
@@ -49,23 +53,96 @@ Workflow находится здесь:
 
 ## Backend URL
 
-Сейчас backend локальный:
+Локальный backend:
 
 ```text
 http://localhost:8000
 ```
 
-GitHub Pages не может хостить FastAPI backend. Когда появится внешний backend, нужно добавить repository variable:
+Публичный backend после деплоя на Render будет иметь адрес вида:
 
 ```text
-API_BASE_URL=https://api.example.com
+https://jobcompass-api.onrender.com
+```
+
+GitHub Pages не может хостить FastAPI backend, поэтому после создания Render-сервиса нужно добавить GitHub repository variable:
+
+```text
+API_BASE_URL=https://jobcompass-api.onrender.com
 ```
 
 После этого GitHub Actions соберёт Flutter Web с внешним API.
 
-## Ограничения текущего контура
+## Backend deploy через Render
 
-- Публичная страница GitHub Pages доступна всем.
-- Backend остаётся локальным.
-- Если пользователь открывает GitHub Pages без локального backend, данные из API не загрузятся.
-- Для полноценной публичной платформы позже нужен отдельный backend-хостинг и публичная PostgreSQL.
+В репозитории есть Blueprint:
+
+```text
+render.yaml
+```
+
+Он описывает Docker Web Service `jobcompass-api`, запускает миграции Alembic и стартует FastAPI:
+
+```bash
+alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Порядок настройки:
+
+1. Создать аккаунт Render.
+2. Выбрать `New` -> `Blueprint`.
+3. Подключить GitHub-репозиторий.
+4. Выбрать ветку `main`.
+5. Указать обязательные env variables:
+   - `DATABASE_URL`
+   - `SECRET_KEY`
+   - `BACKEND_CORS_ORIGINS`
+6. Добавить ключи внешних сервисов, если они используются:
+   - `GEMINI_API_KEY`
+   - `ADZUNA_APP_ID`
+   - `ADZUNA_APP_KEY`
+   - `JOOBLE_API_KEY`
+7. Запустить deploy.
+8. Проверить публичный endpoint:
+
+```bash
+curl https://jobcompass-api.onrender.com/
+```
+
+## PostgreSQL deploy через Supabase
+
+Порядок настройки:
+
+1. Создать аккаунт Supabase.
+2. Создать новый проект.
+3. Открыть `Project Settings` -> `Database`.
+4. Скопировать connection string для PostgreSQL.
+5. В Render добавить этот connection string в `DATABASE_URL`.
+6. Убедиться, что URL начинается с драйвера SQLAlchemy:
+
+```text
+postgresql+psycopg://...
+```
+
+Если Supabase выдаёт строку вида `postgresql://...`, нужно заменить начало на `postgresql+psycopg://...`.
+
+## CORS для публичного frontend
+
+Backend читает разрешённые origins из переменной:
+
+```text
+BACKEND_CORS_ORIGINS=https://kirillqaengineer.github.io
+```
+
+Для локальной разработки можно использовать:
+
+```text
+BACKEND_CORS_ORIGINS=http://localhost,http://127.0.0.1,https://kirillqaengineer.github.io
+```
+
+## Ограничения бесплатного контура
+
+- GitHub Pages хорошо подходит для frontend и документации.
+- Render free web service может засыпать после простоя, поэтому первый запрос иногда будет медленнее.
+- Supabase free project может быть paused после периода неактивности.
+- Для стабильного production later лучше перейти на платные минимальные тарифы backend и DB.

@@ -12,6 +12,10 @@ from app.api.health import router as health_router
 from app.core.config import settings
 
 
+def _parse_cors_origins(value: str) -> list[str]:
+    return [origin.strip() for origin in value.split(",") if origin.strip()]
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -20,10 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost",
-        "http://127.0.0.1",
-    ],
+    allow_origins=_parse_cors_origins(settings.backend_cors_origins),
     allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],

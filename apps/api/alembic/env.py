@@ -21,7 +21,7 @@ from app.db.models.user import User  # noqa: F401
 
 database_url = (
     settings.database_url_docker
-    if os.path.exists("/.dockerenv")
+    if os.path.exists("/.dockerenv") and settings.database_url_docker
     else settings.database_url
 )
 

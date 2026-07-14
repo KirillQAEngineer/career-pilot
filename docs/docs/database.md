@@ -7,6 +7,8 @@ title: Database
 
 JobCompass использует PostgreSQL. Схема базы управляется миграциями Alembic.
 
+Локально база запускается через Docker Compose. Для публичного MVP-контура можно использовать Supabase PostgreSQL и передать connection string в backend через `DATABASE_URL`.
+
 ## Локальный запуск БД
 
 ```bash
@@ -113,3 +115,26 @@ docker compose exec -T postgres psql -U postgres -d jobcompass < backup.sql
 - Не коммитить реальные дампы с персональными данными.
 - Любое изменение модели должно иметь миграцию и тест.
 - Перед сложными миграциями проверять сценарий rollback.
+
+## Supabase для публичного контура
+
+Для публичного backend нужна база, доступная из интернета. Базовый порядок:
+
+1. Создать проект в Supabase.
+2. Скопировать PostgreSQL connection string.
+3. В Render добавить env variable `DATABASE_URL`.
+4. Если строка начинается с `postgresql://`, заменить начало на:
+
+```text
+postgresql+psycopg://
+```
+
+5. После deploy Render выполнит:
+
+```bash
+alembic upgrade head
+```
+
+и создаст актуальную схему таблиц.
+
+Важно: бесплатная база подходит для разработки и MVP, но не для гарантированного production SLA.

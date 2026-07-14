@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
+
 
 class Settings(BaseSettings):
     app_name: str = "JobCompass API"
@@ -22,12 +22,18 @@ class Settings(BaseSettings):
 
     upload_dir: str = "uploads"
 
-    jooble_api_key: str
+    jooble_api_key: str = ""
+
+    backend_cors_origins: str = (
+        "http://localhost,"
+        "http://127.0.0.1,"
+        "https://kirillqaengineer.github.io"
+    )
 
     model_config = SettingsConfigDict(
-    env_file=".env",
-    extra="ignore",
-)
+        env_file=".env",
+        extra="ignore",
+    )
 
 
 settings = Settings()

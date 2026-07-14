@@ -8,7 +8,7 @@ import os
 
 database_url = (
     settings.database_url_docker
-    if os.path.exists("/.dockerenv")
+    if os.path.exists("/.dockerenv") and settings.database_url_docker
     else settings.database_url
 )
 

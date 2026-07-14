@@ -70,9 +70,35 @@ docker compose exec api alembic revision -m "describe_change"
 Типовые переменные:
 
 - `DATABASE_URL` - подключение к PostgreSQL.
-- `JWT_SECRET_KEY` - ключ подписи JWT.
+- `DATABASE_URL_DOCKER` - локальное подключение к PostgreSQL внутри Docker Compose.
+- `SECRET_KEY` - ключ подписи JWT.
+- `BACKEND_CORS_ORIGINS` - список origins, которым разрешён доступ к API.
 - `ADZUNA_APP_ID` и `ADZUNA_APP_KEY` - ключи Adzuna.
+- `JOOBLE_API_KEY` - ключ Jooble.
+- `GEMINI_API_KEY` - ключ Gemini.
 - AI provider keys - ключи используемых AI-провайдеров.
+
+## Публичный запуск
+
+Для публичного доступа backend размещается отдельно от GitHub Pages. Рекомендуемый MVP-вариант:
+
+- Render Web Service для FastAPI.
+- Supabase PostgreSQL для базы данных.
+
+Render использует файл:
+
+```text
+render.yaml
+```
+
+На старте сервиса выполняется:
+
+```bash
+alembic upgrade head
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Это значит, что миграции применяются автоматически при деплое.
 
 ## Как добавлять API endpoint
 
