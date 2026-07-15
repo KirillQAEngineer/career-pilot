@@ -7,6 +7,7 @@ from concurrent.futures import (
 from threading import Lock
 
 from app.schemas.job import Job
+from app.core.config import settings
 
 from app.services.jobs.remoteok import RemoteOKProvider
 from app.services.jobs.remotive import RemotiveProvider
@@ -23,7 +24,6 @@ from app.services.jobs.rss import (
 )
 
 # NEW RU sources
-from app.services.jobs.zarplata import ZarplataProvider
 from app.services.jobs.geekjob import GeekJobProvider
 
 from app.services.jobs.logger import JobLogger
@@ -33,8 +33,8 @@ from app.services.jobs.metadata_normalizer import JobMetadataNormalizer
 
 class JobsAggregator:
     CACHE_TTL_SECONDS = 600
-    SEARCH_TIMEOUT_SECONDS = 6.5
-    MAX_WORKERS = 8
+    SEARCH_TIMEOUT_SECONDS = 7.0
+    MAX_WORKERS = 16
 
     def __init__(self):
         self._cache: dict[str, tuple[float, list[Job]]] = {}
@@ -50,24 +50,29 @@ class JobsAggregator:
             JobspressoProvider(),
             GreenhouseProvider(),
             LeverProvider(),
-            JoobleProvider(),
             TheMuseProvider(),
-            AdzunaProvider(),
-
-            # RU
-            ZarplataProvider(),
             GeekJobProvider(),
         ]
+
+        if settings.jooble_api_key:
+            self.providers.append(JoobleProvider())
+
+        if settings.adzuna_app_id and settings.adzuna_app_key:
+            self.providers.append(AdzunaProvider())
 
         self.logger = JobLogger()
         self.pipeline = JobQualityPipeline()
         self.metadata_normalizer = JobMetadataNormalizer()
 
-    def search(self, query: str) -> list[Job]:
+    def search(
+        self,
+        query: str,
+        force_refresh: bool = False,
+    ) -> list[Job]:
         cache_key = query.strip().lower()
         cached_jobs = self._get_cached(cache_key)
 
-        if cached_jobs is not None:
+        if cached_jobs is not None and not force_refresh:
             return cached_jobs
 
         jobs = []
@@ -80,11 +85,14 @@ class JobsAggregator:
         )
 
         futures = {}
+        started_at = {}
 
         for provider in self.providers:
             name = provider.__class__.__name__
             self.logger.start_provider(name)
-            futures[executor.submit(provider.search, query)] = provider
+            future = executor.submit(provider.search, query)
+            futures[future] = provider
+            started_at[future] = time.monotonic()
 
         try:
             for future in as_completed(
@@ -96,7 +104,11 @@ class JobsAggregator:
 
                 try:
                     result = future.result()
-                    self.logger.success(name, len(result), 0.0)
+                    self.logger.success(
+                        name,
+                        len(result),
+                        time.monotonic() - started_at[future],
+                    )
                     jobs.extend(result)
 
                 except Exception as e:
@@ -117,6 +129,9 @@ class JobsAggregator:
                 wait=False,
                 cancel_futures=True,
             )
+
+        if force_refresh and cached_jobs:
+            jobs.extend(cached_jobs)
 
         deduped = self._remove_duplicates(jobs)
 

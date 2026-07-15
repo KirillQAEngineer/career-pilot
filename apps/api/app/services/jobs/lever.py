@@ -1,4 +1,8 @@
-import time
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    TimeoutError as FuturesTimeoutError,
+    as_completed,
+)
 
 import requests
 
@@ -10,7 +14,8 @@ from app.services.jobs.search_terms import matches_search_terms
 class LeverProvider(JobProvider):
 
     BASE_URL = "https://api.lever.co/v0/postings"
-    TIME_BUDGET_SECONDS = 5.0
+    TIME_BUDGET_SECONDS = 5.5
+    MAX_WORKERS = 12
 
     COMPANIES = [
         "lever",
@@ -30,69 +35,98 @@ class LeverProvider(JobProvider):
         "docker",
         "postman",
         "render",
+        "trellis",
+        "rivr",
+        "revealtech",
+        "lingarogroup",
+        "Fliff",
+        "cartrawler",
+        "seranbio",
+        "airalo",
     ]
 
     def search(self, query: str) -> list[Job]:
 
-        jobs = []
-        deadline = time.monotonic() + self.TIME_BUDGET_SECONDS
+        jobs: list[Job] = []
+        executor = ThreadPoolExecutor(max_workers=self.MAX_WORKERS)
+        futures = [
+            executor.submit(self._fetch_company, company, query)
+            for company in self.COMPANIES
+        ]
 
-        for company in self.COMPANIES:
-            if time.monotonic() > deadline:
-                break
-
-            try:
-                response = requests.get(
-                    f"{self.BASE_URL}/{company}",
-                    params={"mode": "json"},
-                    timeout=3,
-                )
-
-                if response.status_code != 200:
+        try:
+            for future in as_completed(
+                futures,
+                timeout=self.TIME_BUDGET_SECONDS,
+            ):
+                try:
+                    jobs.extend(future.result())
+                except Exception:
                     continue
+        except FuturesTimeoutError:
+            pass
+        finally:
+            for future in futures:
+                if not future.done():
+                    future.cancel()
 
-                data = response.json()
+            executor.shutdown(wait=False, cancel_futures=True)
 
-                for item in data:
+        return jobs
 
-                    title = item.get("text", "")
-                    location = item.get("categories", {}).get("location", "Remote")
+    def _fetch_company(
+        self,
+        company: str,
+        query: str,
+    ) -> list[Job]:
+        response = requests.get(
+            f"{self.BASE_URL}/{company}",
+            params={"mode": "json"},
+            timeout=4,
+        )
 
-                    searchable = " ".join(
-                        [
-                            title,
-                            item.get("descriptionPlain") or "",
-                            company,
-                        ]
-                    )
+        if response.status_code != 200:
+            return []
 
-                    if not matches_search_terms(
-                        searchable,
-                        query,
-                    ):
-                        continue
+        jobs: list[Job] = []
 
-                    created_at = item.get("createdAt")
+        for item in response.json():
+            title = item.get("text", "")
+            location = item.get("categories", {}).get(
+                "location",
+                "Remote",
+            )
+            searchable = " ".join(
+                [
+                    title,
+                    item.get("descriptionPlain") or "",
+                    company,
+                ]
+            )
 
-                    jobs.append(
-                        Job(
-                            title=title,
-                            company=company,
-                            location=location,
-                            url=item.get("hostedUrl", ""),
-                            source="Lever",
-                            external_id=str(item.get("id", item.get("hostedUrl", ""))),
-                            description=item.get("descriptionPlain"),
-                            work_format=None,
-                            published_at=(
-                                str(created_at)
-                                if created_at is not None
-                                else None
-                            ),
-                        )
-                    )
-
-            except Exception:
+            if not matches_search_terms(searchable, query):
                 continue
+
+            created_at = item.get("createdAt")
+
+            jobs.append(
+                Job(
+                    title=title,
+                    company=company,
+                    location=location,
+                    url=item.get("hostedUrl", ""),
+                    source="Lever",
+                    external_id=str(
+                        item.get("id", item.get("hostedUrl", ""))
+                    ),
+                    description=item.get("descriptionPlain"),
+                    work_format=None,
+                    published_at=(
+                        str(created_at)
+                        if created_at is not None
+                        else None
+                    ),
+                )
+            )
 
         return jobs

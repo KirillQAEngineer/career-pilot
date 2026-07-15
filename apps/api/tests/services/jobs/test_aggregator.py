@@ -46,6 +46,17 @@ def test_aggregator_caches_jobs_by_query():
     assert provider.calls == 1
 
 
+def test_aggregator_force_refresh_bypasses_cache():
+    provider = FastProvider()
+    aggregator = JobsAggregator()
+    aggregator.providers = [provider]
+
+    aggregator.search("QA Engineer")
+    aggregator.search("QA Engineer", force_refresh=True)
+
+    assert provider.calls == 2
+
+
 def test_aggregator_returns_partial_results_before_slow_provider_finishes():
     aggregator = JobsAggregator()
     aggregator.providers = [

@@ -10,9 +10,53 @@ def test_resume_service_builds_fallback_profile_from_resume_text():
 
     assert profile.profession == "QA Engineer"
     assert profile.level == "Senior"
-    assert "API" in profile.skills
+    assert "API Testing" in profile.skills
     assert "SQL" in profile.skills
     assert "Postman" in profile.technologies
+    assert "Docker" in profile.technologies
+    assert "Regression Testing" in profile.skills
+
+
+def test_resume_service_keeps_comprehensive_resume_technology_lists():
+    service = ResumeService.__new__(ResumeService)
+
+    profile = service._fallback_profile(
+        """
+        QA Engineer. Manual, smoke, regression, integration and API testing.
+        Created test cases and checklists, analyzed requirements and defects.
+        Tools: Postman, Swagger, Charles Proxy, Jira, TestRail, Git,
+        GitLab CI, Docker, PostgreSQL, Kafka, Grafana and Kibana.
+        Used Python, Pytest, Selenium and Playwright for test automation.
+        """
+    )
+
+    assert {
+        "API Testing",
+        "Manual Testing",
+        "Smoke Testing",
+        "Regression Testing",
+        "Integration Testing",
+        "Test Cases",
+        "Checklists",
+        "Requirements Analysis",
+    }.issubset(profile.skills)
+    assert {
+        "Postman",
+        "Swagger",
+        "Charles Proxy",
+        "Jira",
+        "TestRail",
+        "GitLab CI",
+        "Docker",
+        "PostgreSQL",
+        "Kafka",
+        "Grafana",
+        "Kibana",
+        "Python",
+        "Pytest",
+        "Selenium",
+        "Playwright",
+    }.issubset(profile.technologies)
 
 
 def test_resume_service_builds_fallback_analysis():

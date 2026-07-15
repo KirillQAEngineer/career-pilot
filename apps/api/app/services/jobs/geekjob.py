@@ -15,6 +15,8 @@ class GeekJobProvider(JobProvider):
 
         response = requests.get(
             self.URL,
+            params={"qs": query},
+            headers={"User-Agent": "JobCompass/1.0"},
             timeout=4,
         )
         response.raise_for_status()
@@ -26,22 +28,16 @@ class GeekJobProvider(JobProvider):
 
         jobs = []
 
-        for card in soup.select(".vacancy-card"):
-            title = card.select_one(".title")
-            company = card.select_one(".company")
+        for card in soup.select(".collection-item"):
+            title = card.select_one(".vacancy-name .title")
+            company = card.select_one(".company-name")
 
             if not title:
                 continue
 
             title_text = title.text.strip()
 
-            if query.lower() not in title_text.lower():
-                continue
-
-            job_url = (
-                "https://geekjob.ru"
-                + title.get("href", "")
-            )
+            job_url = "https://geekjob.ru" + title.get("href", "")
 
             external_id = urlsplit(job_url).path.rstrip("/")
 
