@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
 import '../../../core/localization/app_localizations.dart';
+import '../../../models/profile.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/resume_upload_provider.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -24,33 +25,6 @@ class ProfileScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          profileAsync.maybeWhen(
-            data: (profile) {
-              if (profile == null) {
-                return const SizedBox.shrink();
-              }
-
-              return IconButton(
-                tooltip: context.tr('edit_profile'),
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: isUploading
-                    ? null
-                    : () async {
-                        final updated = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditProfileScreen(profile: profile),
-                          ),
-                        );
-
-                        if (updated == true) {
-                          ref.invalidate(profileProvider);
-                        }
-                      },
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
           IconButton(
             tooltip: context.tr('settings'),
             icon: const Icon(Icons.settings_outlined),
@@ -94,6 +68,9 @@ class ProfileScreen extends ConsumerWidget {
           if (profile == null) {
             return _EmptyProfileState(
               isUploading: isUploading,
+              onCreateManually: () async {
+                await _openProfileEditor(context, ref, Profile.empty());
+              },
               onUpload: () async {
                 final uploaded = await ref
                     .read(resumeUploadProvider.notifier)
@@ -221,6 +198,17 @@ class ProfileScreen extends ConsumerWidget {
                           spacing: 10,
                           runSpacing: 10,
                           children: [
+                            OutlinedButton.icon(
+                              onPressed: isUploading
+                                  ? null
+                                  : () => _openProfileEditor(
+                                      context,
+                                      ref,
+                                      profile,
+                                    ),
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              label: Text(context.tr('edit_profile')),
+                            ),
                             FilledButton.tonalIcon(
                               onPressed: isUploading
                                   ? null
@@ -344,10 +332,8 @@ class ProfileScreen extends ConsumerWidget {
                                         }
 
                                         final deleted = await ref
-                                            .read(
-                                              profileDeleteProvider.notifier,
-                                            )
-                                            .deleteProfile();
+                                            .read(resumeDeleteProvider.notifier)
+                                            .deleteResume();
 
                                         if (!context.mounted) {
                                           return;
@@ -393,6 +379,21 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     return value[0].toUpperCase();
+  }
+
+  Future<void> _openProfileEditor(
+    BuildContext context,
+    WidgetRef ref,
+    Profile profile,
+  ) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profile)),
+    );
+
+    if (updated == true) {
+      ref.invalidate(profileProvider);
+    }
   }
 
   void _showResume(BuildContext context, String resumeText) {
@@ -474,8 +475,13 @@ class _ProfileSection extends StatelessWidget {
 class _EmptyProfileState extends StatelessWidget {
   final bool isUploading;
   final Future<void> Function() onUpload;
+  final Future<void> Function() onCreateManually;
 
-  const _EmptyProfileState({required this.isUploading, required this.onUpload});
+  const _EmptyProfileState({
+    required this.isUploading,
+    required this.onUpload,
+    required this.onCreateManually,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -496,7 +502,7 @@ class _EmptyProfileState extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                context.tr('step_upload_description'),
+                context.tr('profile_setup_options'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -504,6 +510,22 @@ class _EmptyProfileState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: isUploading
+                      ? null
+                      : () async {
+                          await onCreateManually();
+                        },
+                  icon: const Icon(Icons.edit_note_outlined),
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(context.tr('create_profile_manually')),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(

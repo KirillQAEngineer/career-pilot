@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/api_client.dart';
+import 'account_provider.dart';
 
 class AuthState {
   final bool isAuthenticated;
@@ -56,6 +57,7 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       ApiClient.setToken(token);
+      ref.invalidate(currentUserProvider);
 
       state = const AuthState(isAuthenticated: true, isLoading: false);
     } catch (_) {
@@ -92,6 +94,7 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       ApiClient.setToken(token);
+      ref.invalidate(currentUserProvider);
 
       final preferences = await SharedPreferences.getInstance();
       await preferences.setString(_tokenKey, token);
@@ -164,6 +167,7 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       ApiClient.setToken(token);
+      ref.invalidate(currentUserProvider);
 
       final preferences = await SharedPreferences.getInstance();
       await preferences.setString(_tokenKey, token);
@@ -212,6 +216,7 @@ class AuthNotifier extends Notifier<AuthState> {
     await preferences.remove(_tokenKey);
 
     ApiClient.clearToken();
+    ref.invalidate(currentUserProvider);
 
     state = const AuthState(isAuthenticated: false, isLoading: false);
   }

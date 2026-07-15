@@ -19,6 +19,19 @@ class Profile {
     required this.resumeText,
   });
 
+  factory Profile.empty() {
+    return const Profile(
+      id: 0,
+      profession: '',
+      level: '',
+      skills: '',
+      technologies: '',
+      englishLevel: '',
+      preferredRoles: '',
+      resumeText: '',
+    );
+  }
+
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
       id: json['id'] as int? ?? 0,

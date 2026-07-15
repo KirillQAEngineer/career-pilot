@@ -64,8 +64,8 @@ SELECT id, email, created_at FROM users ORDER BY id DESC LIMIT 10;
 
 ## Основные таблицы
 
-- `users` - пользователи.
-- `resume_profiles` - распарсенные резюме и профиль кандидата.
+- `users` - пользователи, дата регистрации и признак `is_admin`.
+- `resume_profiles` - ручной профиль кандидата и, при наличии, текст загруженного резюме.
 - `job_interactions` - сохранённые, скрытые и открытые вакансии.
 - `applications` - CRM-отклики.
 - `application_analytics_adjustments` - ручные корректировки Analytics.
@@ -138,3 +138,15 @@ alembic upgrade head
 и создаст актуальную схему таблиц.
 
 Важно: бесплатная база подходит для разработки и MVP, но не для гарантированного production SLA.
+
+## Управление ролью администратора
+
+Роль меняется через закрытый Admin API. Для аварийной проверки в PostgreSQL:
+
+```sql
+SELECT id, email, is_admin, created_at
+FROM users
+ORDER BY id;
+```
+
+Не рекомендуется менять `is_admin` вручную. Начальная миграция ролей автоматически выдаёт права аккаунту `tester.gishko@gmail.com`; дальнейшие изменения выполняются из раздела «Админ».

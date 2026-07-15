@@ -4,13 +4,22 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db.repositories.user_repository import UserRepository
+from app.core.dependencies import get_current_user
 from app.core.security import verify_password, create_access_token
-from app.schemas.user import Token, UserCreate
+from app.db.models.user import User
+from app.schemas.user import Token, UserCreate, UserResponse
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
+
+
+@router.get("/me", response_model=UserResponse)
+def current_account(
+    current_user: User = Depends(get_current_user),
+):
+    return current_user
 
 
 @router.post("/register", response_model=Token, status_code=201)

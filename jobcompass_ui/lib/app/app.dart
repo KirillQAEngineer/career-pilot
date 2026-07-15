@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/localization/app_localizations.dart';
+import '../features/admin/screens/admin_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/applications/screens/application_history_screen.dart';
 import '../features/feed/screens/feed_screen.dart';
@@ -10,6 +11,7 @@ import '../features/home/screens/home_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/saved/screens/saved_screen.dart';
 import '../providers/auth_provider.dart';
+import '../providers/account_provider.dart';
 import '../providers/theme_provider.dart';
 
 class JobCompassApp extends ConsumerWidget {
@@ -41,14 +43,14 @@ class JobCompassApp extends ConsumerWidget {
   }
 }
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation> {
   int selectedIndex = 0;
 
   void _selectTab(int index) {
@@ -61,8 +63,8 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
-  Widget _buildCurrentScreen() {
-    switch (selectedIndex) {
+  Widget _buildCurrentScreen(int index, {required bool isAdmin}) {
+    switch (index) {
       case 0:
         return HomeScreen(
           onOpenFeed: () => _selectTab(1),
@@ -77,6 +79,8 @@ class _MainNavigationState extends State<MainNavigation> {
         return const ApplicationHistoryScreen();
       case 4:
         return const ProfileScreen();
+      case 5:
+        return isAdmin ? const AdminScreen() : const ProfileScreen();
       default:
         return HomeScreen(
           onOpenFeed: () => _selectTab(1),
@@ -88,10 +92,14 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = ref.watch(currentUserProvider).value?.isAdmin ?? false;
+    final destinationCount = isAdmin ? 6 : 5;
+    final effectiveIndex = selectedIndex < destinationCount ? selectedIndex : 4;
+
     return Scaffold(
-      body: _buildCurrentScreen(),
+      body: _buildCurrentScreen(effectiveIndex, isAdmin: isAdmin),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
+        selectedIndex: effectiveIndex,
         onDestinationSelected: _selectTab,
         destinations: [
           NavigationDestination(
@@ -119,6 +127,12 @@ class _MainNavigationState extends State<MainNavigation> {
             selectedIcon: Icon(Icons.person),
             label: context.tr('profile'),
           ),
+          if (isAdmin)
+            NavigationDestination(
+              icon: Icon(Icons.admin_panel_settings_outlined),
+              selectedIcon: Icon(Icons.admin_panel_settings),
+              label: context.tr('admin'),
+            ),
         ],
       ),
     );

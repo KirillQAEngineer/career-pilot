@@ -100,6 +100,11 @@ class ResumeService:
             resume_text,
         )
 
+        profile = self._merge_existing_profile(
+            user.id,
+            profile,
+        )
+
         if analysis is None:
             analysis = self._fallback_analysis(resume_text)
 
@@ -187,6 +192,48 @@ class ResumeService:
             user_id=user.id,
             profile=profile,
             resume_text=resume_text,
+        )
+
+    def _merge_existing_profile(
+        self,
+        user_id: int,
+        profile: ResumeProfileSchema,
+    ) -> ResumeProfileSchema:
+        existing = self.repository.get_by_user_id(user_id)
+
+        if existing is None:
+            return profile
+
+        def values(value: str) -> list[str]:
+            return [item.strip() for item in value.split(",") if item.strip()]
+
+        def merge(left: list[str], right: list[str]) -> list[str]:
+            result: list[str] = []
+            seen: set[str] = set()
+
+            for item in [*left, *right]:
+                key = item.casefold()
+
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                result.append(item)
+
+            return result
+
+        return profile.model_copy(
+            update={
+                "skills": merge(values(existing.skills), profile.skills),
+                "technologies": merge(
+                    values(existing.technologies),
+                    profile.technologies,
+                ),
+                "preferred_roles": merge(
+                    values(existing.preferred_roles),
+                    profile.preferred_roles,
+                ),
+            }
         )
 
     def _fallback_profile(

@@ -38,3 +38,12 @@ def get_current_user(
         raise HTTPException(401, "User not found")
 
     return user
+
+
+def require_admin(
+    current_user=Depends(get_current_user),
+):
+    if not current_user.is_admin:
+        raise HTTPException(403, "Administrator access required")
+
+    return current_user
