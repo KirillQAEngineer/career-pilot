@@ -109,3 +109,14 @@ class ResumeProfileRepository:
 
         self.db.delete(profile)
         self.db.commit()
+
+    def clear_resume(
+        self,
+        profile: ResumeProfile,
+    ) -> ResumeProfile:
+        profile.resume_text = ""
+
+        self.db.commit()
+        self.db.refresh(profile)
+
+        return profile

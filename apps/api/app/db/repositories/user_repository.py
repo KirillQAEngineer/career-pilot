@@ -29,10 +29,28 @@ class UserRepository:
         return user
 
     def get_all(self):
-        return self.db.query(User).all()
+        return self.db.query(User).order_by(User.id).all()
+
+    def count(self) -> int:
+        return self.db.query(User).count()
+
+    def count_admins(self) -> int:
+        return self.db.query(User).filter(User.is_admin.is_(True)).count()
 
     def get(self, user_id: int):
         return self.db.query(User).filter(User.id == user_id).first()
 
     def get_by_email(self, email: str):
         return self.db.query(User).filter(User.email == email).first()
+
+    def update_admin_role(
+        self,
+        user: User,
+        is_admin: bool,
+    ) -> User:
+        user.is_admin = is_admin
+
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user

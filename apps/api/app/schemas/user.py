@@ -1,4 +1,8 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field
+
+from app.schemas.resume_profile_response import ResumeProfileResponse
 
 
 class UserCreate(BaseModel):
@@ -16,6 +20,8 @@ class UserResponse(BaseModel):
     id: int
     email: EmailStr
     full_name: str
+    is_admin: bool
+    created_at: datetime
 
     model_config = {
         "from_attributes": True
@@ -25,3 +31,16 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class AdminStatsResponse(BaseModel):
+    total_users: int
+    total_admins: int
+
+
+class AdminUserDetail(UserResponse):
+    profile: ResumeProfileResponse | None = None
+
+
+class AdminRoleUpdate(BaseModel):
+    is_admin: bool

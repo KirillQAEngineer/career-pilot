@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/api_client.dart';
 import 'profile_provider.dart';
+import 'jobs_provider.dart';
 
 final resumeUploadProvider = AsyncNotifierProvider<ResumeUploadNotifier, void>(
   ResumeUploadNotifier.new,
@@ -58,6 +59,7 @@ class ResumeUploadNotifier extends AsyncNotifier<void> {
       );
 
       ref.invalidate(profileProvider);
+      ref.invalidate(jobsProvider);
 
       await ref.read(profileProvider.future);
 

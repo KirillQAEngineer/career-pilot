@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+
+from app.schemas.resume_profile import ResumeProfile
 from app.services.application.resume_service import ResumeService
 
 
@@ -67,3 +70,32 @@ def test_resume_service_builds_fallback_analysis():
     assert analysis.score == 60
     assert analysis.summary
     assert analysis.recommendations
+
+
+def test_resume_upload_preserves_manually_entered_profile_lists():
+    service = ResumeService.__new__(ResumeService)
+    service.repository = SimpleNamespace(
+        get_by_user_id=lambda user_id: SimpleNamespace(
+            skills="Exploratory Testing,SQL",
+            technologies="Postman,PostgreSQL",
+            preferred_roles="QA Engineer",
+        )
+    )
+    extracted = ResumeProfile(
+        profession="QA Engineer",
+        level="Middle",
+        skills=["SQL", "API Testing"],
+        technologies=["Docker", "Postman"],
+        english_level="B2",
+        preferred_roles=["Test Engineer"],
+    )
+
+    merged = service._merge_existing_profile(42, extracted)
+
+    assert merged.skills == [
+        "Exploratory Testing",
+        "SQL",
+        "API Testing",
+    ]
+    assert merged.technologies == ["Postman", "PostgreSQL", "Docker"]
+    assert merged.preferred_roles == ["QA Engineer", "Test Engineer"]

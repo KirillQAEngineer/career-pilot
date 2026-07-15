@@ -9,6 +9,7 @@ from app.db.repositories.resume_profile_repository import (
 from app.db.session import get_db
 from app.schemas import ResumeProfileResponse
 from app.schemas.resume_profile_update import ResumeProfileUpdate
+from app.schemas.resume_profile import ResumeProfile as ResumeProfileSchema
 
 router = APIRouter(
     prefix="/profile",
@@ -51,15 +52,36 @@ def update_my_profile(
     profile = repository.get_by_user_id(current_user.id)
 
     if profile is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Resume profile not found",
+        return repository.create(
+            user_id=current_user.id,
+            profile=ResumeProfileSchema(**data.model_dump()),
+            resume_text="",
         )
 
     return repository.update(
         profile=profile,
         data=data,
     )
+
+
+@router.delete(
+    "/me/resume",
+    response_model=ResumeProfileResponse,
+)
+def delete_my_resume(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = ResumeProfileRepository(db)
+    profile = repository.get_by_user_id(current_user.id)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Resume profile not found",
+        )
+
+    return repository.clear_resume(profile)
 
 
 @router.delete(

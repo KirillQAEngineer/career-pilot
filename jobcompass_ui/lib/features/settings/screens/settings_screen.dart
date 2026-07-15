@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_localizations.dart';
+import '../../../providers/account_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 
@@ -38,6 +39,7 @@ class SettingsScreen extends ConsumerWidget {
     final strings = context.strings;
     final theme = ref.watch(themeProvider);
     final language = ref.watch(localeProvider);
+    final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,6 +51,59 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(10),
         children: [
+          Card(
+            child: currentUser.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, stackTrace) => ListTile(
+                leading: const Icon(Icons.error_outline),
+                title: Text(strings.tr('account')),
+                subtitle: Text(strings.tr('failed_load_account')),
+                trailing: IconButton(
+                  onPressed: () => ref.invalidate(currentUserProvider),
+                  icon: const Icon(Icons.refresh),
+                  tooltip: strings.tr('retry'),
+                ),
+              ),
+              data: (user) => Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.account_circle_outlined),
+                    title: Text(strings.tr('account')),
+                    subtitle: Text(user.fullName),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.email_outlined),
+                    title: Text(strings.tr('login')),
+                    subtitle: SelectableText(user.email),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.tag),
+                    title: Text(strings.tr('account_id')),
+                    subtitle: SelectableText('${user.id}'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.verified_user_outlined),
+                    title: Text(strings.tr('account_status')),
+                    subtitle: Text(
+                      strings.tr(
+                        user.isAdmin ? 'administrator_role' : 'user_role',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Card(
             child: Column(
               children: [
@@ -101,9 +156,18 @@ class SettingsScreen extends ConsumerWidget {
                   title: Text(strings.tr('notifications')),
                 ),
                 const Divider(height: 1),
-                ListTile(
+                ExpansionTile(
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: Text(strings.tr('privacy')),
+                  subtitle: Text(strings.tr('privacy_subtitle')),
+                  childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _PrivacyPoint(text: strings.tr('privacy_passwords')),
+                    _PrivacyPoint(text: strings.tr('privacy_profile')),
+                    _PrivacyPoint(text: strings.tr('privacy_resume')),
+                    _PrivacyPoint(text: strings.tr('privacy_admin')),
+                  ],
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -122,6 +186,30 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _logout(context, ref),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivacyPoint extends StatelessWidget {
+  const _PrivacyPoint({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 7),
+            child: Icon(Icons.circle, size: 6),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
         ],
       ),
     );

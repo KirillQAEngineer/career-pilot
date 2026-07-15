@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/api_client.dart';
 import '../models/profile.dart';
+import 'jobs_provider.dart';
 
 final profileProvider = FutureProvider<Profile?>((ref) async {
   try {
@@ -55,6 +56,7 @@ class ProfileUpdateNotifier extends AsyncNotifier<void> {
       );
 
       ref.invalidate(profileProvider);
+      ref.invalidate(jobsProvider);
 
       state = const AsyncData(null);
 
@@ -67,16 +69,15 @@ class ProfileUpdateNotifier extends AsyncNotifier<void> {
   }
 }
 
-final profileDeleteProvider =
-    AsyncNotifierProvider<ProfileDeleteNotifier, void>(
-      ProfileDeleteNotifier.new,
-    );
+final resumeDeleteProvider = AsyncNotifierProvider<ResumeDeleteNotifier, void>(
+  ResumeDeleteNotifier.new,
+);
 
-class ProfileDeleteNotifier extends AsyncNotifier<void> {
+class ResumeDeleteNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<bool> deleteProfile() async {
+  Future<bool> deleteResume() async {
     if (state.isLoading) {
       return false;
     }
@@ -84,9 +85,10 @@ class ProfileDeleteNotifier extends AsyncNotifier<void> {
     state = const AsyncLoading();
 
     try {
-      await ApiClient.dio.delete('/profile/me');
+      await ApiClient.dio.delete('/profile/me/resume');
 
       ref.invalidate(profileProvider);
+      ref.invalidate(jobsProvider);
 
       state = const AsyncData(null);
 

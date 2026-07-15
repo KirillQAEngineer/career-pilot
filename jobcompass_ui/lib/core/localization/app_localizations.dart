@@ -76,6 +76,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'saved': 'Saved',
     'crm': 'Analytics',
     'profile': 'Profile',
+    'admin': 'Admin',
     'settings': 'Settings',
     'retry': 'Retry',
     'language': 'Language',
@@ -91,15 +92,31 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'version': 'Version 1.0',
     'notifications': 'Notifications',
     'privacy': 'Privacy',
+    'privacy_subtitle': 'How JobCompass handles your account data',
+    'privacy_passwords':
+        'Passwords are stored only as secure hashes and are never shown in the interface.',
+    'privacy_profile':
+        'Profile data is used to personalize vacancies and calculate job matches.',
+    'privacy_resume':
+        'You can remove the uploaded resume without deleting manually entered profile fields.',
+    'privacy_admin':
+        'Account information is available only to you and platform administrators.',
+    'account': 'Account',
+    'login': 'Login',
+    'account_id': 'User ID',
+    'account_status': 'Account status',
+    'user_role': 'User',
+    'administrator_role': 'Administrator',
+    'failed_load_account': 'Could not load account information',
     'welcome_back': 'Welcome back',
     'workspace_ready': 'Your JobCompass workspace is ready.',
     'platform_title': 'Your job search, in one place',
     'platform_description':
         'JobCompass turns your resume into a focused workspace for finding, saving and tracking the right opportunities.',
     'how_to_use': 'How to use JobCompass',
-    'step_upload': 'Upload your resume',
+    'step_upload': 'Set up your profile',
     'step_upload_description':
-        'Build your professional profile from your experience.',
+        'Fill it manually, upload a resume, or combine both options.',
     'step_discover': 'Discover relevant jobs',
     'step_discover_description':
         'Browse vacancies selected for your profile in Feed.',
@@ -111,6 +128,9 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'open_feed': 'Explore Feed',
     'open_saved': 'Saved Jobs',
     'manage_profile': 'Manage Profile',
+    'profile_setup_options':
+        'Fill in the profile manually, upload a resume, or use both options together.',
+    'create_profile_manually': 'Fill Profile Manually',
     'upload_resume': 'Upload Resume',
     'replace_resume': 'Replace Resume',
     'analyzing_resume': 'Analyzing Resume...',
@@ -128,7 +148,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'delete_resume': 'Delete Resume',
     'delete_resume_title': 'Delete Resume',
     'delete_resume_description':
-        'This will permanently delete your resume and profile data. Continue?',
+        'This will permanently delete the uploaded resume. Your manually entered profile fields will remain. Continue?',
     'delete': 'Delete',
     'close': 'Close',
     'edit_profile': 'Edit Profile',
@@ -192,13 +212,34 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'comment_saved': 'Comment saved',
     'comment_removed': 'Comment removed',
     'failed_comment': 'Failed to save comment',
-    'upload_resume_first': 'Upload your resume first',
+    'upload_resume_first': 'Set up your profile first',
     'feed_resume_description':
-        'JobCompass needs your resume to build a personalized job feed.',
+        'JobCompass needs profile data to build a personalized job feed.',
     'feed_resume_long_description':
-        'JobCompass uses your resume to understand your experience, skills, and preferred roles before building your personalized job feed.',
+        'Fill in your profile manually or upload a resume so JobCompass can understand your experience, skills, and preferred roles.',
     'open_profile_upload':
-        'Open Profile and upload your resume to get started.',
+        'Open Profile and fill in the fields or upload a resume to get started.',
+    'registered_users': 'Registered users',
+    'administrators': 'Administrators',
+    'users': 'Users',
+    'no_users': 'No users found',
+    'user_details': 'User details',
+    'registered_at': 'Registered',
+    'profile_data': 'Profile data',
+    'profile_not_created': 'The user has not created a profile yet.',
+    'resume_present': 'Resume uploaded',
+    'resume_absent': 'Profile completed without a resume',
+    'grant_admin': 'Grant administrator rights',
+    'revoke_admin': 'Revoke administrator rights',
+    'change_role_confirmation':
+        'The user permissions will change immediately. Continue?',
+    'confirm': 'Confirm',
+    'admin_role_updated': 'Administrator rights updated',
+    'failed_admin_role': 'Could not update administrator rights',
+    'cannot_change_own_role':
+        'You cannot revoke your own administrator rights.',
+    'admin_access_error':
+        'The Admin section is available only to platform administrators.',
     'no_jobs_found': 'No jobs found',
     'untitled_vacancy': 'Untitled vacancy',
     'details_not_specified': 'Details not specified',
@@ -310,6 +351,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'saved': 'Сохранённые',
     'crm': 'Аналитика',
     'profile': 'Профиль',
+    'admin': 'Админ',
     'settings': 'Настройки',
     'retry': 'Повторить',
     'language': 'Язык',
@@ -325,15 +367,31 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'version': 'Версия 1.0',
     'notifications': 'Уведомления',
     'privacy': 'Приватность',
+    'privacy_subtitle': 'Как JobCompass работает с данными аккаунта',
+    'privacy_passwords':
+        'Пароли хранятся только в виде защищённых хешей и не отображаются в интерфейсе.',
+    'privacy_profile':
+        'Данные профиля используются для подбора вакансий и расчёта совпадения.',
+    'privacy_resume':
+        'Загруженное резюме можно удалить, не удаляя поля, заполненные вручную.',
+    'privacy_admin':
+        'Информация аккаунта доступна только вам и администраторам платформы.',
+    'account': 'Аккаунт',
+    'login': 'Логин',
+    'account_id': 'ID пользователя',
+    'account_status': 'Статус аккаунта',
+    'user_role': 'Пользователь',
+    'administrator_role': 'Администратор',
+    'failed_load_account': 'Не удалось загрузить информацию об аккаунте',
     'welcome_back': 'С возвращением',
     'workspace_ready': 'Рабочее пространство JobCompass готово.',
     'platform_title': 'Поиск работы — в одном месте',
     'platform_description':
         'JobCompass превращает резюме в удобное пространство для поиска, сохранения и отслеживания подходящих вакансий.',
     'how_to_use': 'Как пользоваться JobCompass',
-    'step_upload': 'Загрузите резюме',
+    'step_upload': 'Настройте профиль',
     'step_upload_description':
-        'Создайте профессиональный профиль на основе опыта.',
+        'Заполните его вручную, загрузите резюме или совместите оба варианта.',
     'step_discover': 'Изучайте вакансии',
     'step_discover_description':
         'Смотрите подходящие предложения в разделе Вакансии.',
@@ -345,6 +403,9 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'open_feed': 'Открыть вакансии',
     'open_saved': 'Сохранённые вакансии',
     'manage_profile': 'Управление профилем',
+    'profile_setup_options':
+        'Заполните профиль вручную, загрузите резюме или используйте оба варианта вместе.',
+    'create_profile_manually': 'Заполнить профиль вручную',
     'upload_resume': 'Загрузить резюме',
     'replace_resume': 'Заменить резюме',
     'analyzing_resume': 'Анализируем резюме...',
@@ -362,7 +423,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'delete_resume': 'Удалить резюме',
     'delete_resume_title': 'Удалить резюме',
     'delete_resume_description':
-        'Резюме и данные профиля будут удалены без возможности восстановления. Продолжить?',
+        'Загруженное резюме будет удалено без возможности восстановления. Поля профиля, заполненные вручную, сохранятся. Продолжить?',
     'delete': 'Удалить',
     'close': 'Закрыть',
     'edit_profile': 'Редактировать профиль',
@@ -468,12 +529,34 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'comment_saved': 'Комментарий сохранён',
     'comment_removed': 'Комментарий удалён',
     'failed_comment': 'Не удалось сохранить комментарий',
-    'upload_resume_first': 'Сначала загрузите резюме',
+    'upload_resume_first': 'Сначала настройте профиль',
     'feed_resume_description':
-        'JobCompass нужны данные резюме для формирования персональной ленты вакансий.',
+        'JobCompass нужны данные профиля для формирования персональной ленты вакансий.',
     'feed_resume_long_description':
-        'JobCompass использует резюме, чтобы понять опыт, навыки и желаемые роли перед созданием персональной ленты.',
-    'open_profile_upload': 'Откройте Профиль и загрузите резюме, чтобы начать.',
+        'Заполните профиль вручную или загрузите резюме, чтобы JobCompass понял ваш опыт, навыки и желаемые роли.',
+    'open_profile_upload':
+        'Откройте Профиль и заполните поля или загрузите резюме, чтобы начать.',
+    'registered_users': 'Зарегистрировано пользователей',
+    'administrators': 'Администраторов',
+    'users': 'Пользователи',
+    'no_users': 'Пользователи не найдены',
+    'user_details': 'Информация о пользователе',
+    'registered_at': 'Дата регистрации',
+    'profile_data': 'Данные профиля',
+    'profile_not_created': 'Пользователь ещё не создал профиль.',
+    'resume_present': 'Резюме загружено',
+    'resume_absent': 'Профиль заполнен без резюме',
+    'grant_admin': 'Выдать права администратора',
+    'revoke_admin': 'Забрать права администратора',
+    'change_role_confirmation':
+        'Права пользователя изменятся сразу. Продолжить?',
+    'confirm': 'Подтвердить',
+    'admin_role_updated': 'Права администратора обновлены',
+    'failed_admin_role': 'Не удалось изменить права администратора',
+    'cannot_change_own_role':
+        'Нельзя забрать права администратора у собственного аккаунта.',
+    'admin_access_error':
+        'Раздел «Админ» доступен только администраторам платформы.',
     'no_jobs_found': 'Вакансии не найдены',
     'untitled_vacancy': 'Вакансия без названия',
     'details_not_specified': 'Детали не указаны',
