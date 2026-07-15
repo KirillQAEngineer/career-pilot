@@ -180,7 +180,7 @@ def job_resume(
 
 @router.get("/search")
 def search_jobs(
-    limit: int = 50,
+    limit: int = 300,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -230,7 +230,7 @@ def search_jobs(
 
 @router.get("/feed")
 def jobs_feed(
-    limit: int = 50,
+    limit: int = 300,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -289,9 +289,6 @@ def jobs_feed(
             profile.resume_text,
             job,
         )
-
-        if score < 20:
-            continue
 
         feed.append(
             {

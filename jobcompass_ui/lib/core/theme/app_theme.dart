@@ -64,8 +64,8 @@ class AppTheme {
             surfaceContainerLowest: AppColors.darkBackground,
             surfaceContainerLow: AppColors.darkCard,
             surfaceContainer: AppColors.darkCard,
-            surfaceContainerHigh: const Color(0xFF171717),
-            surfaceContainerHighest: const Color(0xFF1F1F1F),
+            surfaceContainerHigh: const Color(0xFF20242C),
+            surfaceContainerHighest: const Color(0xFF282D38),
             onSurface: AppColors.textPrimaryDark,
             onSurfaceVariant: AppColors.textSecondaryDark,
           ),
@@ -97,7 +97,7 @@ class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF151515),
+        fillColor: const Color(0xFF20242C),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,

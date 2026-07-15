@@ -294,6 +294,13 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
       },
       data: (items) {
         final filteredJobs = filterJobs(items);
+        final sources =
+            items
+                .map((job) => job.source.trim())
+                .where((source) => source.isNotEmpty)
+                .toSet()
+                .toList()
+              ..sort();
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -304,6 +311,12 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(10),
             children: [
+              _FeedStatsBlock(
+                totalJobs: items.length,
+                visibleJobs: filteredJobs.length,
+                sources: sources,
+              ),
+              const SizedBox(height: 10),
               TextField(
                 controller: searchController,
                 textInputAction: TextInputAction.search,
@@ -383,6 +396,57 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
           ),
         );
       },
+    );
+  }
+}
+
+class _FeedStatsBlock extends StatelessWidget {
+  const _FeedStatsBlock({
+    required this.totalJobs,
+    required this.visibleJobs,
+    required this.sources,
+  });
+
+  final int totalJobs;
+  final int visibleJobs;
+  final List<String> sources;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final previewSources = sources.take(5).join(', ');
+    final remainingSources = sources.length > 5
+        ? ' +${sources.length - 5}'
+        : '';
+    final sourceText = sources.isEmpty
+        ? context.tr('sources_unknown')
+        : '$previewSources$remainingSources';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: DefaultTextStyle(
+        style: textTheme.bodySmall!.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text('${context.tr('jobs_found')}: $totalJobs'),
+            Text('${context.tr('jobs_visible')}: $visibleJobs'),
+            Text('${context.tr('job_sources')}: ${sources.length}'),
+            Text(sourceText, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
     );
   }
 }

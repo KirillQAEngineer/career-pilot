@@ -1,11 +1,11 @@
 {
-    "name": "jobcompass_ui",
-    "short_name": "jobcompass_ui",
+    "name": "JobCompass",
+    "short_name": "JobCompass",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#111318",
+    "theme_color": "#111318",
+    "description": "AI-assisted job search and application tracker.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
