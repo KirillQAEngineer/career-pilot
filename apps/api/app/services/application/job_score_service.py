@@ -12,6 +12,12 @@ class JobScoreService:
 
         # 1. совпадение по роли
         role_keywords = [
+            "qa",
+            "quality",
+            "quality assurance",
+            "test",
+            "test automation",
+            "sdet",
             "engineer",
             "developer",
             "backend",
@@ -59,7 +65,6 @@ class JobScoreService:
         # 4. spam penalty
         spam_keywords = [
             "casino",
-            "tester",
             "adult",
             "escort",
             "crypto trader",
