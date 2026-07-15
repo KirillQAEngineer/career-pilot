@@ -54,7 +54,10 @@ def test_jobicy_provider_parses_remote_jobs(monkeypatch):
 
 
 def test_arbeitnow_provider_filters_and_parses_jobs(monkeypatch):
-    def fake_get(url, headers=None, timeout=None):
+    def fake_get(url, params=None, headers=None, timeout=None):
+        if params != {"page": 1}:
+            return FakeResponse({"data": []})
+
         return FakeResponse(
             {
                 "data": [

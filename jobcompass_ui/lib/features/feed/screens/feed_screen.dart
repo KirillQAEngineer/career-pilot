@@ -261,6 +261,10 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
     });
   }
 
+  Future<void> _refreshJobs() {
+    return ref.read(jobsProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(jobsProvider);
@@ -281,9 +285,7 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
                 Text(error.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: () {
-                    ref.invalidate(jobsProvider);
-                  },
+                  onPressed: _refreshJobs,
                   icon: const Icon(Icons.refresh),
                   label: Text(context.tr('retry')),
                 ),
@@ -303,10 +305,7 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
               ..sort();
 
         return RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(jobsProvider);
-            await ref.read(jobsProvider.future);
-          },
+          onRefresh: _refreshJobs,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(10),
@@ -315,6 +314,7 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
                 totalJobs: items.length,
                 visibleJobs: filteredJobs.length,
                 sources: sources,
+                onRefresh: _refreshJobs,
               ),
               const SizedBox(height: 10),
               TextField(
@@ -405,11 +405,13 @@ class _FeedStatsBlock extends StatelessWidget {
     required this.totalJobs,
     required this.visibleJobs,
     required this.sources,
+    required this.onRefresh,
   });
 
   final int totalJobs;
   final int visibleJobs;
   final List<String> sources;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -444,6 +446,14 @@ class _FeedStatsBlock extends StatelessWidget {
             Text('${context.tr('jobs_visible')}: $visibleJobs'),
             Text('${context.tr('job_sources')}: ${sources.length}'),
             Text(sourceText, overflow: TextOverflow.ellipsis),
+            IconButton(
+              tooltip: context.tr('refresh_jobs'),
+              onPressed: onRefresh,
+              visualDensity: VisualDensity.compact,
+              iconSize: 18,
+              constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+              icon: const Icon(Icons.refresh),
+            ),
           ],
         ),
       ),

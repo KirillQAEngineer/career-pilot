@@ -181,6 +181,7 @@ def job_resume(
 @router.get("/search")
 def search_jobs(
     limit: int = 150,
+    refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -195,7 +196,10 @@ def search_jobs(
         )
 
     provider = get_jobs_provider()
-    jobs = provider.search(profile.profession)
+    jobs = provider.search(
+        profile.profession,
+        force_refresh=refresh,
+    )
 
     score_service = JobScoreService()
 
@@ -231,6 +235,7 @@ def search_jobs(
 @router.get("/feed")
 def jobs_feed(
     limit: int = 150,
+    refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -259,7 +264,10 @@ def jobs_feed(
     )
 
     provider = get_jobs_provider()
-    jobs = provider.search(profile.profession)
+    jobs = provider.search(
+        profile.profession,
+        force_refresh=refresh,
+    )
 
     scorer = JobScoreService()
 

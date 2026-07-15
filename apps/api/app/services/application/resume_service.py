@@ -15,6 +15,9 @@ from app.schemas.analysis import AnalysisResponse
 from app.schemas.resume_profile import ResumeProfile as ResumeProfileSchema
 from app.schemas.upload import UploadResponse
 from app.services.ai.factory import get_ai
+from app.services.application.resume_profile_enricher import (
+    ResumeProfileEnricher,
+)
 from app.services.parsers.parser import extract_text
 
 
@@ -91,6 +94,11 @@ class ResumeService:
 
         if profile is None:
             profile = self._fallback_profile(resume_text)
+
+        profile = ResumeProfileEnricher().enrich(
+            profile,
+            resume_text,
+        )
 
         if analysis is None:
             analysis = self._fallback_analysis(resume_text)
@@ -186,58 +194,22 @@ class ResumeService:
         resume_text: str,
     ) -> ResumeProfileSchema:
         normalized = resume_text.lower()
-        skills = self._extract_keywords(
-            normalized,
-            [
-                "api",
-                "automation",
-                "docker",
-                "git",
-                "java",
-                "jira",
-                "manual testing",
-                "mobile",
-                "postman",
-                "python",
-                "qa",
-                "regression",
-                "selenium",
-                "sql",
-                "test cases",
-                "testing",
-                "web",
-            ],
-        )
-        technologies = self._extract_keywords(
-            normalized,
-            [
-                "android",
-                "appium",
-                "charles",
-                "docker",
-                "fastapi",
-                "flutter",
-                "git",
-                "ios",
-                "jenkins",
-                "linux",
-                "postgresql",
-                "postman",
-                "pytest",
-                "selenium",
-            ],
-        )
 
         profession = "QA Engineer" if "qa" in normalized else "Specialist"
         level = "Senior" if "senior" in normalized else "Middle"
 
-        return ResumeProfileSchema(
+        profile = ResumeProfileSchema(
             profession=profession,
             level=level,
-            skills=skills or ["Testing"],
-            technologies=technologies,
+            skills=["Testing"],
+            technologies=[],
             english_level="Not specified",
             preferred_roles=[profession],
+        )
+
+        return ResumeProfileEnricher().enrich(
+            profile,
+            resume_text,
         )
 
     def _fallback_analysis(
@@ -256,14 +228,3 @@ class ResumeService:
                 "Review and edit the generated profile fields manually.",
             ],
         )
-
-    def _extract_keywords(
-        self,
-        normalized_text: str,
-        keywords: list[str],
-    ) -> list[str]:
-        return [
-            keyword.upper() if keyword in {"api", "qa", "sql"} else keyword.title()
-            for keyword in keywords
-            if keyword in normalized_text
-        ][:10]

@@ -29,4 +29,8 @@ GREENHOUSE_COMPANIES = [
     ("Render", "render"),
     ("Supabase", "supabase"),
     ("Linear", "linear"),
+    ("KnowBe4", "knowbe4"),
+    ("Orion Innovation", "orioninnovation"),
+    ("Pico", "picoquantitativetrading"),
+    ("SmartBear", "smartbear"),
 ]
