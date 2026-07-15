@@ -4,7 +4,7 @@ const config = {
   url: 'https://kirillqaengineer.github.io',
   baseUrl: process.env.DOCS_BASE_URL || '/docs/',
   organizationName: 'KirillQAEngineer',
-  projectName: 'career-pilot',
+  projectName: 'JobCompass',
   onBrokenLinks: 'throw',
   markdown: {
     hooks: {

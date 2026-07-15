@@ -55,10 +55,20 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
 
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
-      ),
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: AppColors.primary,
+            brightness: Brightness.dark,
+          ).copyWith(
+            surface: AppColors.darkBackground,
+            surfaceContainerLowest: AppColors.darkBackground,
+            surfaceContainerLow: AppColors.darkCard,
+            surfaceContainer: AppColors.darkCard,
+            surfaceContainerHigh: const Color(0xFF171717),
+            surfaceContainerHighest: const Color(0xFF1F1F1F),
+            onSurface: AppColors.textPrimaryDark,
+            onSurfaceVariant: AppColors.textSecondaryDark,
+          ),
 
       scaffoldBackgroundColor: AppColors.darkBackground,
 
@@ -87,7 +97,7 @@ class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xff1F2937),
+        fillColor: const Color(0xFF151515),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
