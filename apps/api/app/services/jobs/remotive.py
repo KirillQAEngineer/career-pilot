@@ -18,7 +18,7 @@ class RemotiveProvider(JobProvider):
             params={
                 "search": query,
             },
-            timeout=20,
+            timeout=4,
         )
 
         response.raise_for_status()

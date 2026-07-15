@@ -46,7 +46,7 @@ class JobicyProvider(JobProvider):
                 "User-Agent": "JobCompass/1.0",
                 "Accept": "application/json",
             },
-            timeout=15,
+            timeout=4,
         )
 
         response.raise_for_status()

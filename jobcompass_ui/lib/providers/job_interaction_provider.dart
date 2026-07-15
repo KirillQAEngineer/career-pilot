@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/api_client.dart';
 import '../models/job.dart';
-import 'jobs_provider.dart';
 import 'saved_jobs_provider.dart';
 
 class JobInteractionNotifier extends Notifier<Set<String>> {
@@ -47,7 +46,6 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
       state = {...state, job.url};
 
       ref.invalidate(savedJobsProvider);
-      ref.invalidate(jobsProvider);
 
       return true;
     } on DioException {
@@ -63,8 +61,6 @@ class JobInteractionNotifier extends Notifier<Set<String>> {
         '/jobs/interact',
         data: job.toInteractionJson(action: 'dislike'),
       );
-
-      ref.invalidate(jobsProvider);
 
       return true;
     } on DioException {

@@ -1,6 +1,12 @@
-from app.schemas.job import Job
+import time
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    TimeoutError as FuturesTimeoutError,
+    as_completed,
+)
+from threading import Lock
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from app.schemas.job import Job
 
 from app.services.jobs.remoteok import RemoteOKProvider
 from app.services.jobs.remotive import RemotiveProvider
@@ -16,8 +22,7 @@ from app.services.jobs.rss import (
     WeWorkRemotelyProvider,
 )
 
-# NEW RU sources 
-from app.services.jobs.superjob import SuperJobProvider
+# NEW RU sources
 from app.services.jobs.zarplata import ZarplataProvider
 from app.services.jobs.geekjob import GeekJobProvider
 
@@ -27,8 +32,13 @@ from app.services.jobs.metadata_normalizer import JobMetadataNormalizer
 
 
 class JobsAggregator:
+    CACHE_TTL_SECONDS = 600
+    SEARCH_TIMEOUT_SECONDS = 6.5
+    MAX_WORKERS = 8
 
     def __init__(self):
+        self._cache: dict[str, tuple[float, list[Job]]] = {}
+        self._cache_lock = Lock()
 
         self.providers = [
             # GLOBAL
@@ -45,7 +55,6 @@ class JobsAggregator:
             AdzunaProvider(),
 
             # RU
-            SuperJobProvider(),
             ZarplataProvider(),
             GeekJobProvider(),
         ]
@@ -53,37 +62,61 @@ class JobsAggregator:
         self.logger = JobLogger()
         self.pipeline = JobQualityPipeline()
         self.metadata_normalizer = JobMetadataNormalizer()
+
     def search(self, query: str) -> list[Job]:
+        cache_key = query.strip().lower()
+        cached_jobs = self._get_cached(cache_key)
+
+        if cached_jobs is not None:
+            return cached_jobs
 
         jobs = []
 
-        with ThreadPoolExecutor(max_workers=len(self.providers)) as executor:
+        executor = ThreadPoolExecutor(
+            max_workers=min(
+                len(self.providers),
+                self.MAX_WORKERS,
+            )
+        )
 
-            futures = {
-                executor.submit(provider.search, query): provider
-                for provider in self.providers
-            }
+        futures = {}
 
-            for future in as_completed(futures):
+        for provider in self.providers:
+            name = provider.__class__.__name__
+            self.logger.start_provider(name)
+            futures[executor.submit(provider.search, query)] = provider
 
+        try:
+            for future in as_completed(
+                futures,
+                timeout=self.SEARCH_TIMEOUT_SECONDS,
+            ):
                 provider = futures[future]
                 name = provider.__class__.__name__
 
-                self.logger.start_provider(name)
-
                 try:
                     result = future.result()
-
-                    self.logger.success(
-                        name,
-                        len(result),
-                        0.0
-                    )
-
+                    self.logger.success(name, len(result), 0.0)
                     jobs.extend(result)
 
                 except Exception as e:
                     self.logger.error(name, e)
+
+        except FuturesTimeoutError as e:
+            self.logger.error(
+                "JobsAggregator",
+                e,
+            )
+
+        finally:
+            for future in futures:
+                if not future.done():
+                    future.cancel()
+
+            executor.shutdown(
+                wait=False,
+                cancel_futures=True,
+            )
 
         deduped = self._remove_duplicates(jobs)
 
@@ -96,7 +129,42 @@ class JobsAggregator:
             query=query,
         )
 
+        if cleaned:
+            self._set_cached(
+                cache_key,
+                cleaned,
+            )
+
         return cleaned
+
+    def _get_cached(
+        self,
+        cache_key: str,
+    ) -> list[Job] | None:
+        with self._cache_lock:
+            cached = self._cache.get(cache_key)
+
+            if cached is None:
+                return None
+
+            cached_at, jobs = cached
+
+            if time.monotonic() - cached_at > self.CACHE_TTL_SECONDS:
+                self._cache.pop(cache_key, None)
+                return None
+
+            return list(jobs)
+
+    def _set_cached(
+        self,
+        cache_key: str,
+        jobs: list[Job],
+    ) -> None:
+        with self._cache_lock:
+            self._cache[cache_key] = (
+                time.monotonic(),
+                list(jobs),
+            )
 
     def _remove_duplicates(self, jobs: list[Job]) -> list[Job]:
 

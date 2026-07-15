@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 from app.schemas.job import Job
@@ -9,6 +11,7 @@ from app.services.jobs.search_terms import matches_search_terms
 class GreenhouseProvider(JobProvider):
 
     URL = "https://boards-api.greenhouse.io/v1/boards"
+    TIME_BUDGET_SECONDS = 5.0
 
     def search(
         self,
@@ -16,8 +19,11 @@ class GreenhouseProvider(JobProvider):
     ) -> list[Job]:
 
         jobs = []
+        deadline = time.monotonic() + self.TIME_BUDGET_SECONDS
 
         for company_name, token in GREENHOUSE_COMPANIES:
+            if time.monotonic() > deadline:
+                break
 
             if not token:
                 continue
@@ -26,7 +32,7 @@ class GreenhouseProvider(JobProvider):
 
                 board_jobs = requests.get(
                     f"{self.URL}/{token}/jobs",
-                    timeout=10,
+                    timeout=3,
                 )
 
                 if board_jobs.status_code != 200:

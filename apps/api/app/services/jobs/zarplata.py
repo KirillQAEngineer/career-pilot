@@ -16,7 +16,7 @@ class ZarplataProvider(JobProvider):
                 "text": query,
                 "limit": 50,
             },
-            timeout=10,
+            timeout=4,
         )
 
         response.raise_for_status()

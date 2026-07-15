@@ -110,8 +110,8 @@ class _MainNavigationState extends State<MainNavigation> {
             label: context.tr('saved'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.view_kanban_outlined),
-            selectedIcon: Icon(Icons.view_kanban),
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
             label: context.tr('crm'),
           ),
           NavigationDestination(

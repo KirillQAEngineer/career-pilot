@@ -28,7 +28,7 @@ class RssJobProvider(JobProvider):
                     "User-Agent": "JobCompass/1.0",
                     "Accept": "application/rss+xml, application/xml, text/xml",
                 },
-                timeout=15,
+                timeout=4,
             )
             response.raise_for_status()
 

@@ -17,7 +17,7 @@ class TheMuseProvider(JobProvider):
             params={
                 "page": 0,
             },
-            timeout=10,
+            timeout=4,
         )
 
         response.raise_for_status()

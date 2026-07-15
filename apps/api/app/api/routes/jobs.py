@@ -180,7 +180,7 @@ def job_resume(
 
 @router.get("/search")
 def search_jobs(
-    limit: int = 300,
+    limit: int = 150,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -230,7 +230,7 @@ def search_jobs(
 
 @router.get("/feed")
 def jobs_feed(
-    limit: int = 300,
+    limit: int = 150,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -308,7 +308,7 @@ def jobs_feed(
         reverse=True,
     )
 
-    return feed[:limit]
+    return feed[: min(limit, 150)]
 
 
 @router.post("/interact")

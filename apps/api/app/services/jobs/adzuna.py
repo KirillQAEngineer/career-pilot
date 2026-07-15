@@ -21,7 +21,7 @@ class AdzunaProvider(JobProvider):
                 "what": query,
                 "content-type": "application/json",
             },
-            timeout=10,
+            timeout=4,
         )
 
         response.raise_for_status()

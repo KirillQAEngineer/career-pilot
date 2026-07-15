@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 from app.schemas.job import Job
@@ -8,6 +10,7 @@ from app.services.jobs.search_terms import matches_search_terms
 class LeverProvider(JobProvider):
 
     BASE_URL = "https://api.lever.co/v0/postings"
+    TIME_BUDGET_SECONDS = 5.0
 
     COMPANIES = [
         "lever",
@@ -32,15 +35,17 @@ class LeverProvider(JobProvider):
     def search(self, query: str) -> list[Job]:
 
         jobs = []
-        query_lower = query.lower()
+        deadline = time.monotonic() + self.TIME_BUDGET_SECONDS
 
         for company in self.COMPANIES:
+            if time.monotonic() > deadline:
+                break
 
             try:
                 response = requests.get(
                     f"{self.BASE_URL}/{company}",
                     params={"mode": "json"},
-                    timeout=10,
+                    timeout=3,
                 )
 
                 if response.status_code != 200:

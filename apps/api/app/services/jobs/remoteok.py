@@ -17,7 +17,7 @@ class RemoteOKProvider(JobProvider):
             headers={
                 "User-Agent": "JobCompass",
             },
-            timeout=20,
+            timeout=4,
         )
 
         response.raise_for_status()

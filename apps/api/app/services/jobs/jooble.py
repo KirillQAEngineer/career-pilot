@@ -18,7 +18,7 @@ class JoobleProvider(JobProvider):
                 "keywords": query,
                 "location": "",
             },
-            timeout=10,
+            timeout=4,
         )
 
         response.raise_for_status()

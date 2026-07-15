@@ -15,7 +15,7 @@ class GeekJobProvider(JobProvider):
 
         response = requests.get(
             self.URL,
-            timeout=10,
+            timeout=4,
         )
         response.raise_for_status()
 

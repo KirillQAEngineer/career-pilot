@@ -6,7 +6,7 @@ import '../models/job.dart';
 final jobsProvider = FutureProvider<List<Job>>((ref) async {
   final response = await ApiClient.dio.get(
     '/jobs/feed',
-    queryParameters: {'limit': 300},
+    queryParameters: {'limit': 120},
   );
 
   final data = response.data;
