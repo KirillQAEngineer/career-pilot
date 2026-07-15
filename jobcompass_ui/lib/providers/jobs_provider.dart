@@ -1,34 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/api_client.dart';
+import '../features/feed/services/jobs_api.dart';
 import '../models/job.dart';
 
+final jobsApiProvider = Provider<JobsApi>((ref) => JobsApi(ApiClient.dio));
+
 class JobsNotifier extends AsyncNotifier<List<Job>> {
+  JobsApi get _api => ref.read(jobsApiProvider);
+
   @override
   Future<List<Job>> build() {
-    return _fetch(forceRefresh: false);
+    return _api.fetchJobs(forceRefresh: false);
   }
 
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetch(forceRefresh: true));
-  }
+  Future<bool> refresh() async {
+    final previousJobs = state.value;
 
-  Future<List<Job>> _fetch({required bool forceRefresh}) async {
-    final response = await ApiClient.dio.get(
-      '/jobs/feed',
-      queryParameters: {'limit': 150, if (forceRefresh) 'refresh': true},
-    );
+    try {
+      final jobs = await _api.fetchJobs(forceRefresh: true);
 
-    final data = response.data;
+      state = AsyncData(jobs);
 
-    if (data is! List) {
-      throw Exception('Invalid jobs response: expected a list');
+      return true;
+    } catch (error, stackTrace) {
+      if (previousJobs != null) {
+        state = AsyncData(previousJobs);
+      } else {
+        state = AsyncError(error, stackTrace);
+      }
+
+      return false;
     }
-
-    return data
-        .map((item) => Job.fromJson(Map<String, dynamic>.from(item as Map)))
-        .toList();
   }
 }
 

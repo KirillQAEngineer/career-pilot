@@ -133,6 +133,7 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
   final JobFilterService _filterService = const JobFilterService();
 
   JobFilters _filters = const JobFilters();
+  bool _isRefreshing = false;
 
   @override
   void dispose() {
@@ -261,8 +262,30 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
     });
   }
 
-  Future<void> _refreshJobs() {
-    return ref.read(jobsProvider.notifier).refresh();
+  Future<void> _refreshJobs() async {
+    if (_isRefreshing) {
+      return;
+    }
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    final success = await ref.read(jobsProvider.notifier).refresh();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isRefreshing = false;
+    });
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('refresh_jobs_failed'))),
+      );
+    }
   }
 
   @override
@@ -285,8 +308,14 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
                 Text(error.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: _refreshJobs,
-                  icon: const Icon(Icons.refresh),
+                  onPressed: _isRefreshing ? null : _refreshJobs,
+                  icon: _isRefreshing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh),
                   label: Text(context.tr('retry')),
                 ),
               ],
@@ -315,6 +344,7 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
                 visibleJobs: filteredJobs.length,
                 sources: sources,
                 onRefresh: _refreshJobs,
+                isRefreshing: _isRefreshing,
               ),
               const SizedBox(height: 10),
               TextField(
@@ -406,12 +436,14 @@ class _FeedStatsBlock extends StatelessWidget {
     required this.visibleJobs,
     required this.sources,
     required this.onRefresh,
+    required this.isRefreshing,
   });
 
   final int totalJobs;
   final int visibleJobs;
   final List<String> sources;
   final VoidCallback onRefresh;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -448,11 +480,17 @@ class _FeedStatsBlock extends StatelessWidget {
             Text(sourceText, overflow: TextOverflow.ellipsis),
             IconButton(
               tooltip: context.tr('refresh_jobs'),
-              onPressed: onRefresh,
+              onPressed: isRefreshing ? null : onRefresh,
               visualDensity: VisualDensity.compact,
               iconSize: 18,
               constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-              icon: const Icon(Icons.refresh),
+              icon: isRefreshing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
             ),
           ],
         ),

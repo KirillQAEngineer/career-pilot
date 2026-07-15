@@ -12,8 +12,9 @@ class ApiClient {
     BaseOptions(
       baseUrl: _baseUrl,
 
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 30),
+      // Render's free instances may need extra time to wake from sleep.
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
 
       headers: {"Content-Type": "application/json"},
     ),

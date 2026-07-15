@@ -169,6 +169,8 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'job_sources': 'Platforms',
     'sources_unknown': 'Sources unknown',
     'refresh_jobs': 'Refresh vacancies',
+    'refresh_jobs_failed':
+        'Could not refresh vacancies. The current list was preserved. Please try again later.',
     'apply': 'Apply',
     'skip': 'Skip',
     'saved_action': 'Saved',
@@ -443,6 +445,8 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'job_sources': 'Платформы',
     'sources_unknown': 'Источники не определены',
     'refresh_jobs': 'Обновить вакансии',
+    'refresh_jobs_failed':
+        'Не удалось обновить вакансии. Текущий список сохранён. Повторите позже.',
     'apply': 'Применить',
     'skip': 'Пропустить',
     'saved_action': 'Сохранено',
