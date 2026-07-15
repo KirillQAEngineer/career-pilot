@@ -19,8 +19,8 @@ JobCompass публикуется в три части:
 Пример URL после публикации:
 
 ```text
-https://kirillqaengineer.github.io/career-pilot/
-https://kirillqaengineer.github.io/career-pilot/docs/
+https://kirillqaengineer.github.io/JobCompass/
+https://kirillqaengineer.github.io/JobCompass/docs/
 ```
 
 Фактический URL зависит от имени GitHub-репозитория.

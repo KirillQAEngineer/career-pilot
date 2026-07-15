@@ -12,30 +12,60 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final fullNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
 
+  bool isRegisterMode = false;
   bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   @override
   void dispose() {
+    fullNameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> login() async {
+  Future<void> submit() async {
     FocusScope.of(context).unfocus();
 
     if (!formKey.currentState!.validate()) {
       return;
     }
 
-    await ref
-        .read(authProvider.notifier)
-        .login(email: emailController.text, password: passwordController.text);
+    final authNotifier = ref.read(authProvider.notifier);
+
+    if (isRegisterMode) {
+      await authNotifier.register(
+        fullName: fullNameController.text,
+        email: emailController.text,
+        password: passwordController.text,
+      );
+    } else {
+      await authNotifier.login(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+    }
+  }
+
+  void toggleMode() {
+    ref.read(authProvider.notifier).clearError();
+    formKey.currentState?.reset();
+
+    setState(() {
+      isRegisterMode = !isRegisterMode;
+      obscurePassword = true;
+      obscureConfirmPassword = true;
+      passwordController.clear();
+      confirmPasswordController.clear();
+    });
   }
 
   @override
@@ -74,7 +104,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 8),
 
                     Text(
-                      context.tr('sign_in_subtitle'),
+                      context.tr(
+                        isRegisterMode
+                            ? 'sign_up_subtitle'
+                            : 'sign_in_subtitle',
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -82,6 +116,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
 
                     const SizedBox(height: 36),
+
+                    if (isRegisterMode) ...[
+                      TextFormField(
+                        controller: fullNameController,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        decoration: InputDecoration(
+                          labelText: context.tr('full_name'),
+                          hintText: context.tr('full_name_hint'),
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          final fullName = value?.trim() ?? '';
+
+                          if (fullName.isEmpty) {
+                            return context.tr('enter_full_name');
+                          }
+
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+                    ],
 
                     TextFormField(
                       controller: emailController,
@@ -94,7 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: context.tr('email'),
                         hintText: 'you@example.com',
-                        prefixIcon: Icon(Icons.email_outlined),
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
                         final email = value?.trim() ?? '';
@@ -116,7 +174,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: passwordController,
                       obscureText: obscurePassword,
-                      textInputAction: TextInputAction.done,
+                      textInputAction: isRegisterMode
+                          ? TextInputAction.next
+                          : TextInputAction.done,
                       autofillHints: const [AutofillHints.password],
                       decoration: InputDecoration(
                         labelText: context.tr('password'),
@@ -139,14 +199,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return context.tr('enter_password');
                         }
 
+                        if (isRegisterMode && value.length < 8) {
+                          return context.tr('password_min_length');
+                        }
+
                         return null;
                       },
                       onFieldSubmitted: (_) {
-                        if (!authState.isLoading) {
-                          login();
+                        if (!isRegisterMode && !authState.isLoading) {
+                          submit();
                         }
                       },
                     ),
+
+                    if (isRegisterMode) ...[
+                      const SizedBox(height: 16),
+
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirmPassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          labelText: context.tr('confirm_password'),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                obscureConfirmPassword =
+                                    !obscureConfirmPassword;
+                              });
+                            },
+                            icon: Icon(
+                              obscureConfirmPassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return context.tr('confirm_password_required');
+                          }
+
+                          if (value != passwordController.text) {
+                            return context.tr('passwords_do_not_match');
+                          }
+
+                          return null;
+                        },
+                        onFieldSubmitted: (_) {
+                          if (!authState.isLoading) {
+                            submit();
+                          }
+                        },
+                      ),
+                    ],
 
                     if (authState.error != null) ...[
                       const SizedBox(height: 16),
@@ -172,7 +280,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
 
                     FilledButton(
-                      onPressed: authState.isLoading ? null : login,
+                      onPressed: authState.isLoading ? null : submit,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         child: authState.isLoading
@@ -183,7 +291,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(context.tr('sign_in')),
+                            : Text(
+                                context.tr(
+                                  isRegisterMode ? 'sign_up' : 'sign_in',
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextButton(
+                      onPressed: authState.isLoading ? null : toggleMode,
+                      child: Text(
+                        context.tr(
+                          isRegisterMode
+                              ? 'already_have_account'
+                              : 'create_account',
+                        ),
                       ),
                     ),
                   ],

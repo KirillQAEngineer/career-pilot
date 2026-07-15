@@ -19,9 +19,9 @@ class AppColors {
   static const Color lightBorder = Color(0xFFE5E7EB);
 
   // Dark
-  static const Color darkBackground = Color(0xFF0F172A);
-  static const Color darkCard = Color(0xFF1E293B);
-  static const Color darkBorder = Color(0xFF334155);
+  static const Color darkBackground = Colors.black;
+  static const Color darkCard = Color(0xFF101010);
+  static const Color darkBorder = Color(0xFF262626);
 
   // Text
   static const Color textPrimary = Color(0xFF111827);

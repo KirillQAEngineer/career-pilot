@@ -134,6 +134,78 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> register({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final response = await ApiClient.dio.post(
+        '/auth/register',
+        data: {
+          'full_name': fullName.trim(),
+          'email': email.trim(),
+          'password': password,
+        },
+      );
+
+      final data = response.data;
+
+      if (data is! Map) {
+        throw Exception('Invalid registration response');
+      }
+
+      final token = data['access_token']?.toString();
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Access token is missing');
+      }
+
+      ApiClient.setToken(token);
+
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_tokenKey, token);
+
+      state = const AuthState(isAuthenticated: true, isLoading: false);
+
+      return true;
+    } on DioException catch (error) {
+      ApiClient.clearToken();
+
+      String message = 'Registration failed';
+
+      if (error.response?.statusCode == 409) {
+        message = 'User with this email already exists';
+      } else if (error.response?.data is Map) {
+        final detail = error.response?.data['detail'];
+
+        if (detail != null) {
+          message = detail.toString();
+        }
+      }
+
+      state = AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        error: message,
+      );
+
+      return false;
+    } catch (_) {
+      ApiClient.clearToken();
+
+      state = const AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        error: 'Registration failed',
+      );
+
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     final preferences = await SharedPreferences.getInstance();
 

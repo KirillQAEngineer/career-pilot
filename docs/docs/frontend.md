@@ -55,7 +55,7 @@ GitHub Pages для project site обычно требует base href вида 
 ```bash
 flutter build web \
   --release \
-  --base-href /career-pilot/ \
+  --base-href /JobCompass/ \
   --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
