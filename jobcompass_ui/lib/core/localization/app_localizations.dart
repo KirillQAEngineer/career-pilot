@@ -284,6 +284,41 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'sign_up': 'Create Account',
     'create_account': 'Create a new account',
     'already_have_account': 'Already have an account? Sign in',
+    'registration_check_email':
+        'Account created. Check your email and confirm it before signing in.',
+    'email_verification_required':
+        'Confirm your email before signing in. You can request a new link below.',
+    'resend_verification': 'Send the link again',
+    'verification_sent': 'A verification link has been sent to your email.',
+    'failed_send_verification': 'Could not send the verification email.',
+    'email_verification_success': 'Email confirmed. You can now sign in.',
+    'email_verification_invalid':
+        'This confirmation link is invalid or has expired.',
+    'verify_email_prompt_title': 'Confirm your email',
+    'verify_email_prompt_body':
+        'Confirm the address to protect your account and enable payments.',
+    'verify_email': 'Confirm',
+    'email_verified': 'Email confirmed',
+    'email_not_verified': 'Email is not confirmed',
+    'analytics_promo_short':
+        'Lifetime access to job search Analytics — 99 ₽ once',
+    'learn_more': 'Learn more',
+    'analytics_lifetime_title': 'Analytics forever for 99 ₽',
+    'analytics_lifetime_body':
+        'Track applications, stages, comments and historical results. One payment, no recurring charge.',
+    'buy_analytics_crypto': 'Pay {price} with crypto',
+    'payment_invoice_amount':
+        'The invoice is {amount} {currency}; you choose the cryptocurrency on the payment page.',
+    'payment_requires_verified_email':
+        'Confirm your email in Profile before payment.',
+    'payment_unavailable':
+        'Payment is temporarily unavailable. Please try again later.',
+    'payment_open_failed': 'Could not open the secure payment page.',
+    'check_payment': 'I paid — check payment',
+    'payment_pending': 'Payment has not been confirmed yet.',
+    'analytics_access_active': 'Analytics access is active.',
+    'payment_security_note':
+        'Payment is completed on NOWPayments. JobCompass does not receive or store wallet keys.',
     'why_matches': 'Why this matches',
     'missing_skills': 'Missing skills',
     'match': 'Match',
@@ -482,6 +517,39 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'sign_up': 'Создать аккаунт',
     'create_account': 'Создать новый аккаунт',
     'already_have_account': 'Уже есть аккаунт? Войти',
+    'registration_check_email':
+        'Аккаунт создан. Проверьте почту и подтвердите её перед входом.',
+    'email_verification_required':
+        'Подтвердите почту перед входом. Новую ссылку можно запросить ниже.',
+    'resend_verification': 'Отправить ссылку ещё раз',
+    'verification_sent': 'Ссылка подтверждения отправлена на вашу почту.',
+    'failed_send_verification': 'Не удалось отправить письмо подтверждения.',
+    'email_verification_success': 'Почта подтверждена. Теперь можно войти.',
+    'email_verification_invalid':
+        'Ссылка подтверждения недействительна или устарела.',
+    'verify_email_prompt_title': 'Подтвердите почту',
+    'verify_email_prompt_body':
+        'Подтверждение защищает аккаунт и открывает возможность оплаты.',
+    'verify_email': 'Подтвердить',
+    'email_verified': 'Почта подтверждена',
+    'email_not_verified': 'Почта не подтверждена',
+    'analytics_promo_short': 'Бессрочный доступ к Аналитике — один платёж 99 ₽',
+    'learn_more': 'Подробнее',
+    'analytics_lifetime_title': 'Аналитика навсегда за 99 ₽',
+    'analytics_lifetime_body':
+        'Отслеживайте отклики, этапы, комментарии и исторические итоги. Один платёж без продления подписки.',
+    'buy_analytics_crypto': 'Оплатить {price} криптовалютой',
+    'payment_invoice_amount':
+        'Счёт выставляется на {amount} {currency}; криптовалюту вы выбираете на странице оплаты.',
+    'payment_requires_verified_email':
+        'Перед оплатой подтвердите почту в разделе «Профиль».',
+    'payment_unavailable': 'Оплата временно недоступна. Попробуйте позже.',
+    'payment_open_failed': 'Не удалось открыть безопасную страницу оплаты.',
+    'check_payment': 'Я оплатил — проверить платёж',
+    'payment_pending': 'Платёж пока не подтверждён.',
+    'analytics_access_active': 'Доступ к Аналитике активирован.',
+    'payment_security_note':
+        'Оплата проходит на стороне NOWPayments. JobCompass не получает и не хранит ключи вашего кошелька.',
     'why_matches': 'Почему подходит',
     'missing_skills': 'Недостающие навыки',
     'match': 'Совпадение',

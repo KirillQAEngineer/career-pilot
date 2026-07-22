@@ -32,6 +32,9 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: str
     is_admin: bool
+    email_verified_at: datetime | None
+    email_verification_required: bool
+    analytics_lifetime_access: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -40,6 +43,19 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class RegistrationResponse(BaseModel):
+    message: str
+    email: EmailStr
+
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class AdminStatsResponse(BaseModel):

@@ -39,7 +39,7 @@ def build_client():
     return TestClient(app)
 
 
-def test_register_creates_user_and_returns_token():
+def test_register_requires_email_confirmation_before_session():
     client = build_client()
 
     response = client.post(
@@ -51,9 +51,11 @@ def test_register_creates_user_and_returns_token():
         },
     )
 
-    assert response.status_code == 201
-    assert response.json()["token_type"] == "bearer"
-    assert response.json()["access_token"]
+    assert response.status_code == 202
+    assert response.json() == {
+        "message": "Check your email to complete registration",
+        "email": "new.user@example.com",
+    }
 
     app.dependency_overrides.clear()
 
@@ -69,7 +71,7 @@ def test_register_rejects_duplicate_email():
     first = client.post("/auth/register", json=payload)
     second = client.post("/auth/register", json=payload)
 
-    assert first.status_code == 201
+    assert first.status_code == 202
     assert second.status_code == 409
 
     app.dependency_overrides.clear()
@@ -98,6 +100,36 @@ def test_registered_user_can_login():
     assert response.status_code == 200
     assert response.json()["token_type"] == "bearer"
     assert response.json()["access_token"]
+
+    app.dependency_overrides.clear()
+
+
+def test_unverified_new_user_cannot_login(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.email_verification.EmailVerificationService.send",
+        lambda self, user: None,
+    )
+    client = build_client()
+
+    registration = client.post(
+        "/auth/register",
+        json={
+            "email": "unverified@example.com",
+            "password": "strong-password",
+            "full_name": "Unverified User",
+        },
+    )
+    response = client.post(
+        "/auth/login",
+        data={
+            "username": "unverified@example.com",
+            "password": "strong-password",
+        },
+    )
+
+    assert registration.status_code == 202
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Email verification required"
 
     app.dependency_overrides.clear()
 
@@ -150,7 +182,7 @@ def test_login_is_rate_limited_per_account():
 
 def test_account_uses_public_uuid_and_rejects_legacy_numeric_subject():
     client = build_client()
-    registration = client.post(
+    client.post(
         "/auth/register",
         json={
             "email": "uuid@example.com",
@@ -158,7 +190,11 @@ def test_account_uses_public_uuid_and_rejects_legacy_numeric_subject():
             "full_name": "UUID User",
         },
     )
-    token = registration.json()["access_token"]
+    login = client.post(
+        "/auth/login",
+        data={"username": "uuid@example.com", "password": "strong-password"},
+    )
+    token = login.json()["access_token"]
 
     account = client.get(
         "/auth/me",

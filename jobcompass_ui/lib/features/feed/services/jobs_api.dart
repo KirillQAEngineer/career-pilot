@@ -9,12 +9,19 @@ class JobsApi {
 
   static const int _maxAttempts = 2;
 
-  Future<List<Job>> fetchJobs({required bool forceRefresh}) async {
+  Future<List<Job>> fetchJobs({
+    required bool forceRefresh,
+    String query = '',
+  }) async {
     for (var attempt = 1; attempt <= _maxAttempts; attempt++) {
       try {
         final response = await _dio.get(
           '/jobs/feed',
-          queryParameters: {'limit': 150, if (forceRefresh) 'refresh': true},
+          queryParameters: {
+            'limit': 250,
+            if (query.trim().isNotEmpty) 'query': query.trim(),
+            if (forceRefresh) 'refresh': true,
+          },
         );
 
         final data = response.data;

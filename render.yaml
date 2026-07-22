@@ -25,3 +25,25 @@ services:
         sync: false
       - key: JOOBLE_API_KEY
         sync: false
+      - key: PUBLIC_API_BASE_URL
+        value: https://jobcompass-api.onrender.com
+      - key: FRONTEND_BASE_URL
+        value: https://kirillqaengineer.github.io/JobCompass
+      - key: EMAIL_DELIVERY_PROVIDER
+        value: brevo
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM_ADDRESS
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: JobCompass
+      - key: NOWPAYMENTS_API_KEY
+        sync: false
+      - key: NOWPAYMENTS_IPN_SECRET
+        sync: false
+      - key: ANALYTICS_LIFETIME_PRICE_MINOR_UNITS
+        value: 125
+      - key: ANALYTICS_LIFETIME_PRICE_CURRENCY
+        value: USD
+      - key: ANALYTICS_LIFETIME_DISPLAY_PRICE
+        value: 99 ₽

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -134,9 +136,11 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
 
   JobFilters _filters = const JobFilters();
   bool _isRefreshing = false;
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     searchController.dispose();
     super.dispose();
   }
@@ -239,8 +243,15 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
   }
 
   void _updateQuery(String value) {
+    final query = value.trim();
+
     setState(() {
-      _filters = _filters.copyWith(query: value.trim());
+      _filters = _filters.copyWith(query: query);
+    });
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 450), () {
+      ref.read(jobsProvider.notifier).search(query);
     });
   }
 
@@ -250,6 +261,9 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
     setState(() {
       _filters = _filters.copyWith(query: '');
     });
+
+    _searchDebounce?.cancel();
+    ref.read(jobsProvider.notifier).search('');
   }
 
   void _clearStructuredFilters() {
@@ -340,7 +354,6 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
             padding: const EdgeInsets.all(10),
             children: [
               _FeedStatsBlock(
-                totalJobs: items.length,
                 visibleJobs: filteredJobs.length,
                 sources: sources,
                 onRefresh: _refreshJobs,
@@ -432,14 +445,12 @@ class _JobsFeedContentState extends ConsumerState<_JobsFeedContent> {
 
 class _FeedStatsBlock extends StatelessWidget {
   const _FeedStatsBlock({
-    required this.totalJobs,
     required this.visibleJobs,
     required this.sources,
     required this.onRefresh,
     required this.isRefreshing,
   });
 
-  final int totalJobs;
   final int visibleJobs;
   final List<String> sources;
   final VoidCallback onRefresh;
@@ -474,10 +485,11 @@ class _FeedStatsBlock extends StatelessWidget {
           runSpacing: 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('${context.tr('jobs_found')}: $totalJobs'),
             Text('${context.tr('jobs_visible')}: $visibleJobs'),
-            Text('${context.tr('job_sources')}: ${sources.length}'),
-            Text(sourceText, overflow: TextOverflow.ellipsis),
+            Text(
+              '${context.tr('job_sources')}: $sourceText',
+              overflow: TextOverflow.ellipsis,
+            ),
             IconButton(
               tooltip: context.tr('refresh_jobs'),
               onPressed: isRefreshing ? null : onRefresh,

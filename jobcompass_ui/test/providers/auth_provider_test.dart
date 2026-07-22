@@ -120,4 +120,58 @@ void main() {
     expect(state.error, contains('expired'));
     expect(preferences.getString('access_token'), isNull);
   });
+
+  test(
+    'registration waits for email confirmation instead of storing token',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      ApiClient.dio.httpClientAdapter = _FakeAdapter(
+        (_) => _jsonResponse(
+          '{"message":"Check your email","email":"new@example.com"}',
+          202,
+        ),
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await _waitForAuthState(container, (state) => !state.isLoading);
+      final registered = await container
+          .read(authProvider.notifier)
+          .register(
+            fullName: 'New User',
+            email: 'NEW@example.com',
+            password: 'strong-password',
+          );
+      final state = container.read(authProvider);
+      final preferences = await SharedPreferences.getInstance();
+
+      expect(registered, isTrue);
+      expect(state.isAuthenticated, isFalse);
+      expect(state.notice, 'registration_check_email');
+      expect(state.verificationEmail, 'new@example.com');
+      expect(preferences.getString('access_token'), isNull);
+    },
+  );
+
+  test(
+    'unverified login exposes resend action for the entered email',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      ApiClient.dio.httpClientAdapter = _FakeAdapter(
+        (_) => _jsonResponse('{"detail":"Email verification required"}', 403),
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await _waitForAuthState(container, (state) => !state.isLoading);
+      final loggedIn = await container
+          .read(authProvider.notifier)
+          .login(email: 'USER@example.com', password: 'strong-password');
+      final state = container.read(authProvider);
+
+      expect(loggedIn, isFalse);
+      expect(state.error, 'email_verification_required');
+      expect(state.verificationEmail, 'user@example.com');
+    },
+  );
 }

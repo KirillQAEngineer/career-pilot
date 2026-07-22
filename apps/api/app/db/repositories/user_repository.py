@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -15,12 +16,15 @@ class UserRepository:
         email: str,
         password: str,
         full_name: str,
+        *,
+        email_verification_required: bool = True,
     ) -> User:
 
         user = User(
             email=email,
             hashed_password=hash_password(password),
             full_name=full_name,
+            email_verification_required=email_verification_required,
         )
 
         self.db.add(user)
@@ -46,6 +50,46 @@ class UserRepository:
 
     def get_by_email(self, email: str):
         return self.db.query(User).filter(User.email == email).first()
+
+    def get_by_verification_token_hash(self, token_hash: str):
+        return (
+            self.db.query(User)
+            .filter(User.email_verification_token_hash == token_hash)
+            .first()
+        )
+
+    def set_verification_token(
+        self,
+        user: User,
+        *,
+        token_hash: str,
+        expires_at: datetime,
+        sent_at: datetime,
+    ) -> User:
+        user.email_verification_token_hash = token_hash
+        user.email_verification_expires_at = expires_at
+        user.email_verification_sent_at = sent_at
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
+
+    def mark_email_verified(self, user: User, verified_at: datetime) -> User:
+        user.email_verified_at = verified_at
+        user.email_verification_required = False
+        user.email_verification_token_hash = None
+        user.email_verification_expires_at = None
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
+
+    def grant_analytics_lifetime_access(self, user: User) -> User:
+        user.analytics_lifetime_access = True
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
 
     def update_admin_role(
         self,

@@ -5,11 +5,12 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.rate_limit import api_rate_limiter, auth_rate_limiter
 from app.db.models.base import Base
+from app.db.models.user import User
 from app.db.session import get_db
 from app.main import app
 
 
-def build_client() -> TestClient:
+def build_client():
     auth_rate_limiter.clear()
     api_rate_limiter.clear()
     engine = create_engine(
@@ -30,11 +31,11 @@ def build_client() -> TestClient:
 
     app.dependency_overrides[get_db] = override_get_db
 
-    return TestClient(app)
+    return TestClient(app), session_factory
 
 
-def register(client: TestClient, email: str) -> dict[str, str]:
-    response = client.post(
+def register(client: TestClient, session_factory, email: str) -> dict[str, str]:
+    client.post(
         "/auth/register",
         json={
             "email": email,
@@ -43,11 +44,21 @@ def register(client: TestClient, email: str) -> dict[str, str]:
         },
     )
 
+    with session_factory() as db:
+        user = db.query(User).filter(User.email == email).one()
+        user.analytics_lifetime_access = True
+        db.commit()
+
+    response = client.post(
+        "/auth/login",
+        data={"username": email, "password": "strong-password"},
+    )
+
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
 def test_protected_endpoints_reject_missing_and_malformed_tokens():
-    client = build_client()
+    client, _ = build_client()
 
     for endpoint in ["/auth/me", "/profile/me", "/applications", "/admin/users"]:
         missing = client.get(endpoint)
@@ -63,7 +74,7 @@ def test_protected_endpoints_reject_missing_and_malformed_tokens():
 
 
 def test_untrusted_host_and_cross_origin_preflight_are_rejected():
-    client = build_client()
+    client, _ = build_client()
 
     untrusted_host = client.get("/", headers={"Host": "attacker.example"})
     untrusted_origin = client.options(
@@ -82,9 +93,9 @@ def test_untrusted_host_and_cross_origin_preflight_are_rejected():
 
 
 def test_user_cannot_modify_another_users_application():
-    client = build_client()
-    first_user = register(client, "first@example.com")
-    second_user = register(client, "second@example.com")
+    client, session_factory = build_client()
+    first_user = register(client, session_factory, "first@example.com")
+    second_user = register(client, session_factory, "second@example.com")
     created = client.post(
         "/applications",
         headers=first_user,
@@ -111,8 +122,8 @@ def test_user_cannot_modify_another_users_application():
 
 
 def test_saved_job_response_does_not_expose_internal_user_id():
-    client = build_client()
-    headers = register(client, "saved@example.com")
+    client, session_factory = build_client()
+    headers = register(client, session_factory, "saved@example.com")
     interaction = client.post(
         "/jobs/interact",
         headers=headers,

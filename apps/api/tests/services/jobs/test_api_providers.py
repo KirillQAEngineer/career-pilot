@@ -1,5 +1,7 @@
 from app.services.jobs.arbeitnow import ArbeitnowProvider
+from app.services.jobs.adzuna import AdzunaProvider
 from app.services.jobs.jobicy import JobicyProvider
+from app.services.jobs.jooble import JoobleProvider
 
 
 class FakeResponse:
@@ -100,3 +102,59 @@ def test_arbeitnow_provider_filters_and_parses_jobs(monkeypatch):
     assert jobs[0].source == "Arbeitnow"
     assert jobs[0].work_format == "Remote"
     assert jobs[0].description == "Manual and API testing."
+
+
+def test_adzuna_reads_six_pages_of_results(monkeypatch):
+    pages = set()
+
+    def fake_get(url, params=None, timeout=None):
+        page = int(url.rstrip("/").split("/")[-1])
+        pages.add(page)
+        return FakeResponse(
+            {
+                "results": [
+                    {
+                        "id": page,
+                        "title": f"QA Engineer {page}",
+                        "company": {"display_name": "Acme"},
+                        "location": {"display_name": "Remote"},
+                        "redirect_url": f"https://example.com/{page}",
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr("app.services.jobs.adzuna.requests.get", fake_get)
+
+    jobs = AdzunaProvider().search("QA Engineer")
+
+    assert pages == {1, 2, 3, 4, 5, 6}
+    assert len(jobs) == 6
+
+
+def test_jooble_reads_six_pages_of_results(monkeypatch):
+    pages = set()
+
+    def fake_post(url, json=None, timeout=None):
+        page = json["page"]
+        pages.add(page)
+        return FakeResponse(
+            {
+                "jobs": [
+                    {
+                        "id": page,
+                        "title": f"QA Engineer {page}",
+                        "company": "Acme",
+                        "location": "Remote",
+                        "link": f"https://example.com/{page}",
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr("app.services.jobs.jooble.requests.post", fake_post)
+
+    jobs = JoobleProvider().search("QA Engineer")
+
+    assert pages == {1, 2, 3, 4, 5, 6}
+    assert len(jobs) == 6

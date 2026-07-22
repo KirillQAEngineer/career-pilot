@@ -13,8 +13,10 @@ from app.db.models.application import Application  # noqa: F401
 from app.db.models.application_analytics_adjustment import (  # noqa: F401
     ApplicationAnalyticsAdjustment,
 )
+from app.db.models.cached_job import CachedJob  # noqa: F401
 from app.db.models.job_comment import JobComment  # noqa: F401
 from app.db.models.job_interaction import JobInteraction  # noqa: F401
+from app.db.models.payment import Payment  # noqa: F401
 from app.db.models.resume_profile import ResumeProfile  # noqa: F401
 from app.db.models.user import User  # noqa: F401
 

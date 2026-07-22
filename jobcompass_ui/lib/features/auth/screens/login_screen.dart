@@ -42,11 +42,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authNotifier = ref.read(authProvider.notifier);
 
     if (isRegisterMode) {
-      await authNotifier.register(
+      final registered = await authNotifier.register(
         fullName: fullNameController.text,
         email: emailController.text,
         password: passwordController.text,
       );
+
+      if (registered && mounted) {
+        setState(() {
+          isRegisterMode = false;
+          passwordController.clear();
+          confirmPasswordController.clear();
+        });
+      }
     } else {
       await authNotifier.login(
         email: emailController.text,
@@ -56,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void toggleMode() {
-    ref.read(authProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearMessages();
     formKey.currentState?.reset();
 
     setState(() {
@@ -71,6 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final verificationResult = Uri.base.queryParameters['email_verification'];
 
     return Scaffold(
       body: SafeArea(
@@ -264,6 +273,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
 
+                    if (verificationResult != null ||
+                        authState.notice != null) ...[
+                      const SizedBox(height: 16),
+
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              context.tr(
+                                authState.notice ??
+                                    (verificationResult == 'success'
+                                        ? 'email_verification_success'
+                                        : 'email_verification_invalid'),
+                              ),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                            if (authState.verificationEmail != null) ...[
+                              const SizedBox(height: 6),
+                              TextButton.icon(
+                                onPressed: authState.isLoading
+                                    ? null
+                                    : () => ref
+                                          .read(authProvider.notifier)
+                                          .resendVerification(
+                                            authState.verificationEmail!,
+                                          ),
+                                icon: const Icon(
+                                  Icons.mark_email_unread_outlined,
+                                ),
+                                label: Text(context.tr('resend_verification')),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+
                     if (authState.error != null) ...[
                       const SizedBox(height: 16),
 
@@ -273,14 +329,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: Theme.of(context).colorScheme.errorContainer,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          authState.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
-                          ),
+                        child: Column(
+                          children: [
+                            Text(
+                              context.tr(authState.error!),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                            if (authState.verificationEmail != null &&
+                                authState.notice == null) ...[
+                              const SizedBox(height: 6),
+                              TextButton.icon(
+                                onPressed: authState.isLoading
+                                    ? null
+                                    : () => ref
+                                          .read(authProvider.notifier)
+                                          .resendVerification(
+                                            authState.verificationEmail!,
+                                          ),
+                                icon: const Icon(
+                                  Icons.mark_email_unread_outlined,
+                                ),
+                                label: Text(context.tr('resend_verification')),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
