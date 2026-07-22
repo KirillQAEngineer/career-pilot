@@ -174,6 +174,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: passwordController,
                       obscureText: obscurePassword,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       textInputAction: isRegisterMode
                           ? TextInputAction.next
                           : TextInputAction.done,
@@ -199,8 +201,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return context.tr('enter_password');
                         }
 
-                        if (isRegisterMode && value.length < 8) {
+                        if (isRegisterMode && value.length < 12) {
                           return context.tr('password_min_length');
+                        }
+
+                        if (value.length > 128) {
+                          return context.tr('password_max_length');
                         }
 
                         return null;
@@ -218,6 +224,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: confirmPasswordController,
                         obscureText: obscureConfirmPassword,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.password],
                         decoration: InputDecoration(

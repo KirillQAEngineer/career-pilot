@@ -11,8 +11,12 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: ENVIRONMENT
+        value: production
       - key: BACKEND_CORS_ORIGINS
         value: https://kirillqaengineer.github.io
+      - key: BACKEND_ALLOWED_HOSTS
+        value: jobcompass-api.onrender.com
       - key: GEMINI_API_KEY
         sync: false
       - key: ADZUNA_APP_ID

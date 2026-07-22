@@ -10,14 +10,14 @@ class FakeAdminApi extends AdminApi {
   FakeAdminApi()
     : users = [
         AccountUser(
-          id: 1,
+          id: '11111111-1111-4111-8111-111111111111',
           email: 'admin@example.com',
           fullName: 'Admin',
           isAdmin: true,
           createdAt: DateTime.utc(2026, 7, 15),
         ),
         AccountUser(
-          id: 2,
+          id: '22222222-2222-4222-8222-222222222222',
           email: 'user@example.com',
           fullName: 'User',
           isAdmin: false,
@@ -41,7 +41,7 @@ class FakeAdminApi extends AdminApi {
 
   @override
   Future<AccountUser> updateAdminRole({
-    required int userId,
+    required String userId,
     required bool isAdmin,
   }) async {
     final current = users.firstWhere((user) => user.id == userId);
@@ -78,11 +78,21 @@ void main() {
 
     final success = await container
         .read(adminDashboardProvider.notifier)
-        .updateRole(userId: 2, isAdmin: true);
+        .updateRole(
+          userId: '22222222-2222-4222-8222-222222222222',
+          isAdmin: true,
+        );
     final updated = container.read(adminDashboardProvider).requireValue;
 
     expect(success, isTrue);
     expect(updated.stats.totalAdmins, 2);
-    expect(updated.users.firstWhere((user) => user.id == 2).isAdmin, isTrue);
+    expect(
+      updated.users
+          .firstWhere(
+            (user) => user.id == '22222222-2222-4222-8222-222222222222',
+          )
+          .isAdmin,
+      isTrue,
+    );
   });
 }

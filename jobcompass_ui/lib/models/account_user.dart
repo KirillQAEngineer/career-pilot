@@ -1,5 +1,5 @@
 class AccountUser {
-  final int id;
+  final String id;
   final String email;
   final String fullName;
   final bool isAdmin;
@@ -17,7 +17,7 @@ class AccountUser {
     final createdAt = json['created_at']?.toString();
 
     return AccountUser(
-      id: json['id'] as int? ?? 0,
+      id: json['id']?.toString() ?? '',
       email: json['email'] as String? ?? '',
       fullName: json['full_name'] as String? ?? '',
       isAdmin: json['is_admin'] as bool? ?? false,

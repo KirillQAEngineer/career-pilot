@@ -2,7 +2,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from uuid import UUID
 
+from app.core.rate_limit import auth_rate_limiter
 from app.db.models.base import Base
 from app.db.models.user import User
 from app.db.session import get_db
@@ -10,6 +12,7 @@ from app.main import app
 
 
 def build_client():
+    auth_rate_limiter.clear()
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -105,7 +108,7 @@ def test_admin_cannot_remove_own_role():
     with session_factory() as db:
         admin = db.query(User).filter(User.email == "admin@example.com").one()
         admin.is_admin = True
-        admin_id = admin.id
+        admin_id = admin.public_id
         db.commit()
 
     response = client.patch(
@@ -126,7 +129,7 @@ def test_current_account_returns_database_identity_and_role():
     response = client.get("/auth/me", headers=authorize(token))
 
     assert response.status_code == 200
-    assert response.json()["id"] > 0
+    assert UUID(response.json()["id"])
     assert response.json()["email"] == "account@example.com"
     assert response.json()["is_admin"] is False
 

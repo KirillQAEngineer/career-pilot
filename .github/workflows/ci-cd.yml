@@ -61,7 +61,8 @@ jobs:
       PYTHONPATH: apps/api
       DATABASE_URL: postgresql+psycopg://jobcompass:jobcompass@localhost:5432/jobcompass_ci
       DATABASE_URL_DOCKER: ""
-      SECRET_KEY: ci-only-secret-key
+      SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
+      ENVIRONMENT: test
       GEMINI_API_KEY: ""
       ADZUNA_APP_ID: ""
       ADZUNA_APP_KEY: ""
@@ -85,6 +86,14 @@ jobs:
 
       - name: Validate installed dependencies
         run: python -m pip check
+
+      - name: Install security audit tools
+        run: python -m pip install pip-audit==2.10.1 bandit==1.9.4
+
+      - name: Audit backend dependencies and source
+        run: |
+          pip-audit -r apps/api/requirements.txt
+          bandit -r apps/api/app -ll
 
       - name: Compile backend source
         run: python -m compileall -q apps/api/app apps/api/alembic/versions
@@ -221,9 +230,9 @@ jobs:
         working-directory: docs
         run: npm ci
 
-      - name: Audit critical documentation dependencies
+      - name: Audit documentation dependencies
         working-directory: docs
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=moderate
 
       - name: Build Docusaurus documentation
         working-directory: docs

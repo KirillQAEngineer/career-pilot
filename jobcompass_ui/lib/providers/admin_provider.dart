@@ -20,7 +20,10 @@ class AdminDashboardNotifier extends AsyncNotifier<AdminDashboardData> {
     );
   }
 
-  Future<bool> updateRole({required int userId, required bool isAdmin}) async {
+  Future<bool> updateRole({
+    required String userId,
+    required bool isAdmin,
+  }) async {
     try {
       await _api.updateAdminRole(userId: userId, isAdmin: isAdmin);
       ref.invalidate(adminUserProvider(userId));
@@ -46,7 +49,7 @@ final adminDashboardProvider =
       AdminDashboardNotifier.new,
     );
 
-final adminUserProvider = FutureProvider.family<AdminUserDetail, int>((
+final adminUserProvider = FutureProvider.family<AdminUserDetail, String>((
   ref,
   userId,
 ) async {

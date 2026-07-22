@@ -37,8 +37,29 @@ class JobCompassApp extends ConsumerWidget {
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
         locale: Locale(language.code),
-        home: SelectionArea(child: home),
+        home: _ResponsiveSelectionArea(child: home),
       ),
+    );
+  }
+}
+
+class _ResponsiveSelectionArea extends StatelessWidget {
+  const _ResponsiveSelectionArea({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // SelectionArea is useful on desktop, but it can compete with native
+        // text-field gestures and the software keyboard on mobile browsers.
+        if (constraints.maxWidth < 600) {
+          return child;
+        }
+
+        return SelectionArea(child: child);
+      },
     );
   }
 }
@@ -95,46 +116,123 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     final isAdmin = ref.watch(currentUserProvider).value?.isAdmin ?? false;
     final destinationCount = isAdmin ? 6 : 5;
     final effectiveIndex = selectedIndex < destinationCount ? selectedIndex : 4;
+    final currentScreen = _buildCurrentScreen(effectiveIndex, isAdmin: isAdmin);
 
-    return Scaffold(
-      body: _buildCurrentScreen(effectiveIndex, isAdmin: isAdmin),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: effectiveIndex,
-        onDestinationSelected: _selectTab,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: context.tr('home'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
-            label: context.tr('feed'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_outline),
-            selectedIcon: Icon(Icons.bookmark),
-            label: context.tr('saved'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics),
-            label: context.tr('crm'),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: context.tr('profile'),
-          ),
-          if (isAdmin)
-            NavigationDestination(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: Icon(Icons.admin_panel_settings),
-              label: context.tr('admin'),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 900) {
+          final extended = constraints.maxWidth >= 1180;
+
+          return Scaffold(
+            body: Row(
+              children: [
+                SafeArea(
+                  child: NavigationRail(
+                    extended: extended,
+                    selectedIndex: effectiveIndex,
+                    onDestinationSelected: _selectTab,
+                    labelType: extended
+                        ? NavigationRailLabelType.none
+                        : NavigationRailLabelType.selected,
+                    destinations: _railDestinations(context, isAdmin: isAdmin),
+                  ),
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: currentScreen),
+              ],
             ),
-        ],
-      ),
+          );
+        }
+
+        return Scaffold(
+          body: currentScreen,
+          bottomNavigationBar: NavigationBar(
+            height: 68,
+            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+            selectedIndex: effectiveIndex,
+            onDestinationSelected: _selectTab,
+            destinations: _bottomDestinations(context, isAdmin: isAdmin),
+          ),
+        );
+      },
     );
+  }
+
+  List<NavigationDestination> _bottomDestinations(
+    BuildContext context, {
+    required bool isAdmin,
+  }) {
+    return [
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: context.tr('home'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.work_outline),
+        selectedIcon: const Icon(Icons.work),
+        label: context.tr('feed'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.bookmark_outline),
+        selectedIcon: const Icon(Icons.bookmark),
+        label: context.tr('saved'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.analytics_outlined),
+        selectedIcon: const Icon(Icons.analytics),
+        label: context.tr('crm'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.person_outline),
+        selectedIcon: const Icon(Icons.person),
+        label: context.tr('profile'),
+      ),
+      if (isAdmin)
+        NavigationDestination(
+          icon: const Icon(Icons.admin_panel_settings_outlined),
+          selectedIcon: const Icon(Icons.admin_panel_settings),
+          label: context.tr('admin'),
+        ),
+    ];
+  }
+
+  List<NavigationRailDestination> _railDestinations(
+    BuildContext context, {
+    required bool isAdmin,
+  }) {
+    return [
+      NavigationRailDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: Text(context.tr('home')),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.work_outline),
+        selectedIcon: const Icon(Icons.work),
+        label: Text(context.tr('feed')),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.bookmark_outline),
+        selectedIcon: const Icon(Icons.bookmark),
+        label: Text(context.tr('saved')),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.analytics_outlined),
+        selectedIcon: const Icon(Icons.analytics),
+        label: Text(context.tr('crm')),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.person_outline),
+        selectedIcon: const Icon(Icons.person),
+        label: Text(context.tr('profile')),
+      ),
+      if (isAdmin)
+        NavigationRailDestination(
+          icon: const Icon(Icons.admin_panel_settings_outlined),
+          selectedIcon: const Icon(Icons.admin_panel_settings),
+          label: Text(context.tr('admin')),
+        ),
+    ];
   }
 }

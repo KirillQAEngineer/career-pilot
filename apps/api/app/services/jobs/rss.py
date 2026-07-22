@@ -1,7 +1,9 @@
 import html
 import re
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from xml.etree.ElementTree import Element
+
+from defusedxml import ElementTree as ET
 
 import requests
 
@@ -60,7 +62,7 @@ class RssJobProvider(JobProvider):
     def _parse_item(
         self,
         source: str,
-        item: ET.Element,
+        item: Element,
     ) -> Job | None:
         raw_title = self._text(item, "title")
         link = self._text(item, "link") or self._text(item, "guid")
@@ -86,10 +88,10 @@ class RssJobProvider(JobProvider):
     def _split_title(self, raw_title: str) -> tuple[str, str]:
         return raw_title.strip(), ""
 
-    def _location(self, item: ET.Element) -> str:
+    def _location(self, item: Element) -> str:
         return self._text(item, "region") or "Remote"
 
-    def _description(self, item: ET.Element) -> str | None:
+    def _description(self, item: Element) -> str | None:
         content = self._namespaced_text(
             item,
             "http://purl.org/rss/1.0/modules/content/",
@@ -104,7 +106,7 @@ class RssJobProvider(JobProvider):
 
     def _text(
         self,
-        item: ET.Element,
+        item: Element,
         tag: str,
     ) -> str:
         value = item.findtext(tag) or ""
@@ -113,7 +115,7 @@ class RssJobProvider(JobProvider):
 
     def _namespaced_text(
         self,
-        item: ET.Element,
+        item: Element,
         namespace: str,
         tag: str,
     ) -> str:
@@ -166,7 +168,7 @@ class JobspressoProvider(RssJobProvider):
     def _parse_item(
         self,
         source: str,
-        item: ET.Element,
+        item: Element,
     ) -> Job | None:
         job = super()._parse_item(source, item)
 

@@ -805,101 +805,107 @@ class _ApplicationCard extends StatelessWidget {
     return Card(
       key: ValueKey('application-card-${application.id}'),
       margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compactLayout = constraints.maxWidth < 680;
-            final metadata =
-                [
-                      application.jobCompany,
-                      application.jobLocation,
-                      application.jobWorkFormat,
-                      if (!compactLayout)
-                        'Applied ${_formatDate(application.createdAt)}',
-                    ]
-                    .where((value) => value != null && value.trim().isNotEmpty)
-                    .join(' • ');
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compactLayout = constraints.maxWidth < 680;
+              final metadata =
+                  [
+                        application.jobCompany,
+                        application.jobLocation,
+                        application.jobWorkFormat,
+                        if (!compactLayout)
+                          'Applied ${_formatDate(application.createdAt)}',
+                      ]
+                      .where(
+                        (value) => value != null && value.trim().isNotEmpty,
+                      )
+                      .join(' • ');
 
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        application.jobTitle.isEmpty
-                            ? context.tr('untitled_vacancy')
-                            : application.jobTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          application.jobTitle.isEmpty
+                              ? context.tr('untitled_vacancy')
+                              : application.jobTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          metadata.isEmpty
+                              ? context.tr('details_not_specified')
+                              : metadata,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  JobMatchScore(job: application.toJob()),
+                  const SizedBox(width: 6),
+                  JobCommentSection(
+                    jobSource: application.jobSource,
+                    jobExternalId: application.jobExternalId,
+                    compact: true,
+                  ),
+                  if (isUpdating)
+                    const SizedBox(
+                      key: ValueKey('application-status-progress'),
+                      width: 36,
+                      height: 36,
+                      child: Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        metadata.isEmpty
-                            ? context.tr('details_not_specified')
-                            : metadata,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                JobMatchScore(job: application.toJob()),
-                const SizedBox(width: 6),
-                JobCommentSection(
-                  jobSource: application.jobSource,
-                  jobExternalId: application.jobExternalId,
-                  compact: true,
-                ),
-                if (isUpdating)
-                  const SizedBox(
-                    key: ValueKey('application-status-progress'),
-                    width: 36,
-                    height: 36,
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                    )
+                  else
+                    _buildStatusMenu(context),
+                  IconButton(
+                    tooltip: context.tr('open_vacancy'),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 36,
+                      height: 36,
                     ),
-                  )
-                else
-                  _buildStatusMenu(context),
-                IconButton(
-                  tooltip: context.tr('open_vacancy'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 36,
-                    height: 36,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new, size: 20),
                   ),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: application.jobUrl.isEmpty ? null : onOpen,
-                  icon: const Icon(Icons.open_in_new, size: 20),
-                ),
-                IconButton(
-                  tooltip: context.tr('archive_application'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 36,
-                    height: 36,
+                  IconButton(
+                    tooltip: context.tr('archive_application'),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 36,
+                      height: 36,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: isUpdating ? null : onArchive,
+                    icon: const Icon(Icons.archive_outlined, size: 20),
                   ),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: isUpdating ? null : onArchive,
-                  icon: const Icon(Icons.archive_outlined, size: 20),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1031,6 +1037,7 @@ class _ArchivedApplicationsSheet extends StatelessWidget {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
+                            onTap: () => onOpen(application),
                             title: Text(
                               application.jobTitle.isEmpty
                                   ? context.tr('untitled_vacancy')

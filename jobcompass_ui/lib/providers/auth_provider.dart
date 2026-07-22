@@ -40,6 +40,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
+    ApiClient.setUnauthorizedHandler(_handleUnauthorized);
+    ref.onDispose(() => ApiClient.setUnauthorizedHandler(null));
     Future.microtask(_restoreSession);
 
     return const AuthState.initial();
@@ -57,18 +59,45 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       ApiClient.setToken(token);
-      ref.invalidate(currentUserProvider);
 
+      await ApiClient.dio.get(
+        '/auth/me',
+        options: Options(extra: const {'skipUnauthorizedHandler': true}),
+      );
+
+      ref.invalidate(currentUserProvider);
       state = const AuthState(isAuthenticated: true, isLoading: false);
-    } catch (_) {
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        await _clearSession();
+
+        return;
+      }
+
       ApiClient.clearToken();
 
       state = const AuthState(
         isAuthenticated: false,
         isLoading: false,
-        error: 'Could not restore session',
+        error: 'Could not connect to the service. Please try again.',
       );
+    } catch (_) {
+      await _clearSession(error: 'Could not restore session');
     }
+  }
+
+  Future<void> _handleUnauthorized() async {
+    await _clearSession(error: 'Your session has expired. Please sign in.');
+  }
+
+  Future<void> _clearSession({String? error}) async {
+    final preferences = await SharedPreferences.getInstance();
+
+    await preferences.remove(_tokenKey);
+    ApiClient.clearToken();
+    ref.invalidate(currentUserProvider);
+
+    state = AuthState(isAuthenticated: false, isLoading: false, error: error);
   }
 
   Future<bool> login({required String email, required String password}) async {
@@ -211,14 +240,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    final preferences = await SharedPreferences.getInstance();
-
-    await preferences.remove(_tokenKey);
-
-    ApiClient.clearToken();
-    ref.invalidate(currentUserProvider);
-
-    state = const AuthState(isAuthenticated: false, isLoading: false);
+    await _clearSession();
   }
 
   void clearError() {

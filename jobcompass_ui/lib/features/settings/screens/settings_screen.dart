@@ -86,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
                     dense: true,
                     leading: const Icon(Icons.tag),
                     title: Text(strings.tr('account_id')),
-                    subtitle: SelectableText('${user.id}'),
+                    subtitle: SelectableText(user.id),
                   ),
                   const Divider(height: 1),
                   ListTile(

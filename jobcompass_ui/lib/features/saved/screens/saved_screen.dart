@@ -381,72 +381,82 @@ class _SavedJobCard extends StatelessWidget {
     return Card(
       key: ValueKey('saved-job-${job.stableKey}'),
       margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    job.title.isEmpty
-                        ? context.tr('untitled_vacancy')
-                        : job.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      job.title.isEmpty
+                          ? context.tr('untitled_vacancy')
+                          : job.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    metadata.isEmpty
-                        ? context.tr('details_not_specified')
-                        : metadata,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      metadata.isEmpty
+                          ? context.tr('details_not_specified')
+                          : metadata,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            JobMatchScore(job: job.toJob()),
-            const SizedBox(width: 6),
-            JobCommentSection(
-              jobSource: job.source,
-              jobExternalId: job.externalId,
-              compact: true,
-            ),
-            IconButton(
-              tooltip: isRemoving
-                  ? context.tr('removing_saved')
-                  : context.tr('remove_saved'),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              visualDensity: VisualDensity.compact,
-              onPressed: isRemoving ? null : onRemove,
-              icon: isRemoving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.bookmark_remove_outlined, size: 20),
-            ),
-            IconButton(
-              key: ValueKey('saved-open-${job.stableKey}'),
-              tooltip: context.tr('open_vacancy'),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              visualDensity: VisualDensity.compact,
-              onPressed: onOpen,
-              icon: const Icon(Icons.open_in_new, size: 20),
-            ),
-          ],
+              const SizedBox(width: 8),
+              JobMatchScore(job: job.toJob()),
+              const SizedBox(width: 6),
+              JobCommentSection(
+                jobSource: job.source,
+                jobExternalId: job.externalId,
+                compact: true,
+              ),
+              IconButton(
+                tooltip: isRemoving
+                    ? context.tr('removing_saved')
+                    : context.tr('remove_saved'),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
+                visualDensity: VisualDensity.compact,
+                onPressed: isRemoving ? null : onRemove,
+                icon: isRemoving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.bookmark_remove_outlined, size: 20),
+              ),
+              IconButton(
+                key: ValueKey('saved-open-${job.stableKey}'),
+                tooltip: context.tr('open_vacancy'),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
+                visualDensity: VisualDensity.compact,
+                onPressed: onOpen,
+                icon: const Icon(Icons.open_in_new, size: 20),
+              ),
+            ],
+          ),
         ),
       ),
     );

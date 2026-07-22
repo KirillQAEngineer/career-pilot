@@ -3,12 +3,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.rate_limit import auth_rate_limiter
+
 from app.db.models.base import Base
 from app.db.session import get_db
 from app.main import app
 
 
 def build_client():
+    auth_rate_limiter.clear()
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},

@@ -9,7 +9,7 @@ import '../../../providers/admin_provider.dart';
 class AdminUserScreen extends ConsumerWidget {
   const AdminUserScreen({super.key, required this.userId});
 
-  final int userId;
+  final String userId;
 
   Future<void> _changeRole({
     required BuildContext context,
@@ -112,7 +112,7 @@ class AdminUserScreen extends ConsumerWidget {
                     _DetailRow(
                       icon: Icons.tag,
                       label: context.tr('account_id'),
-                      value: '${user.id}',
+                      value: user.id,
                     ),
                     const Divider(height: 1),
                     _DetailRow(

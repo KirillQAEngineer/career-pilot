@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
+from app.core.rate_limit import api_rate_limiter
 from app.db.models.user import User
 from app.db.repositories.job_comment_repository import JobCommentRepository
 from app.db.repositories.job_interaction_repository import (
@@ -13,7 +14,10 @@ from app.db.repositories.resume_profile_repository import (
     ResumeProfileRepository,
 )
 from app.db.session import get_db
-from app.schemas.job_interaction import JobInteractionRequest
+from app.schemas.job_interaction import (
+    JobInteractionRequest,
+    JobInteractionResponse,
+)
 from app.schemas.job_comment import JobCommentResponse, JobCommentUpsert
 from app.schemas.job_cover_letter_response import JobCoverLetterResponse
 from app.schemas.job_description_response import JobDescriptionResponse
@@ -38,6 +42,20 @@ router = APIRouter(
     prefix="/jobs",
     tags=["Jobs"],
 )
+
+
+def _limit_expensive_operation(
+    current_user: User,
+    operation: str,
+    *,
+    limit: int = 10,
+    window_seconds: int = 60,
+) -> None:
+    api_rate_limiter.check(
+        f"jobs:{operation}:{current_user.public_id}",
+        limit=limit,
+        window_seconds=window_seconds,
+    )
 
 
 @router.post(
@@ -81,6 +99,7 @@ def job_requirements(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _limit_expensive_operation(current_user, "requirements")
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -105,6 +124,7 @@ def job_description(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _limit_expensive_operation(current_user, "description")
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -129,6 +149,7 @@ def job_cover_letter(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _limit_expensive_operation(current_user, "cover-letter")
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -158,6 +179,7 @@ def job_resume(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _limit_expensive_operation(current_user, "resume")
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -180,11 +202,18 @@ def job_resume(
 
 @router.get("/search")
 def search_jobs(
-    limit: int = 150,
+    limit: int = Query(default=150, ge=1, le=150),
     refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if refresh:
+        _limit_expensive_operation(
+            current_user,
+            "refresh",
+            limit=2,
+            window_seconds=300,
+        )
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -234,11 +263,18 @@ def search_jobs(
 
 @router.get("/feed")
 def jobs_feed(
-    limit: int = 150,
+    limit: int = Query(default=150, ge=1, le=150),
     refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if refresh:
+        _limit_expensive_operation(
+            current_user,
+            "refresh",
+            limit=2,
+            window_seconds=300,
+        )
     profile = ResumeProfileRepository(db).get_by_user_id(
         current_user.id,
     )
@@ -316,10 +352,10 @@ def jobs_feed(
         reverse=True,
     )
 
-    return feed[: min(limit, 150)]
+    return feed[:limit]
 
 
-@router.post("/interact")
+@router.post("/interact", response_model=JobInteractionResponse)
 def interact(
     request: JobInteractionRequest,
     current_user: User = Depends(get_current_user),
@@ -333,7 +369,7 @@ def interact(
     )
 
 
-@router.get("/saved")
+@router.get("/saved", response_model=list[JobInteractionResponse])
 def saved_jobs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -399,7 +435,7 @@ def delete_saved_job(
     }
 
 
-@router.get("/applied")
+@router.get("/applied", response_model=list[JobInteractionResponse])
 def applied_jobs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

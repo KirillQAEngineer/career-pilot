@@ -64,7 +64,6 @@ class ApplicationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_id: int
 
     job_title: str
     job_company: str

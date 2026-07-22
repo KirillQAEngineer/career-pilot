@@ -1,5 +1,8 @@
 from types import SimpleNamespace
 
+import pytest
+from fastapi import HTTPException
+
 from app.schemas.resume_profile import ResumeProfile
 from app.services.application.resume_service import ResumeService
 
@@ -99,3 +102,22 @@ def test_resume_upload_preserves_manually_entered_profile_lists():
     ]
     assert merged.technologies == ["Postman", "PostgreSQL", "Docker"]
     assert merged.preferred_roles == ["QA Engineer", "Test Engineer"]
+
+
+def test_resume_upload_rejects_content_that_does_not_match_extension():
+    service = ResumeService.__new__(ResumeService)
+
+    with pytest.raises(HTTPException) as exception:
+        service._validate_file_signature(".pdf", b"MZ executable content")
+
+    assert exception.value.status_code == 400
+
+
+@pytest.mark.parametrize(
+    ("suffix", "content"),
+    [(".pdf", b"%PDF-1.7"), (".docx", b"PK\x03\x04")],
+)
+def test_resume_upload_accepts_supported_file_signatures(suffix, content):
+    service = ResumeService.__new__(ResumeService)
+
+    service._validate_file_signature(suffix, content)
