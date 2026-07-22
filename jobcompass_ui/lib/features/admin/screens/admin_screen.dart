@@ -152,6 +152,7 @@ class _UserCard extends StatelessWidget {
     return Card(
       child: ListTile(
         dense: true,
+        isThreeLine: true,
         leading: CircleAvatar(
           child: Icon(
             user.isAdmin ? Icons.admin_panel_settings : Icons.person_outline,
@@ -162,10 +163,39 @@ class _UserCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text(
-          '${user.email} · ID ${user.id}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${user.email} · ID ${user.id}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  user.analyticsLifetimeAccess
+                      ? Icons.verified_outlined
+                      : Icons.lock_outline,
+                  size: 14,
+                  color: user.analyticsLifetimeAccess
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  context.tr(
+                    user.analyticsLifetimeAccess
+                        ? 'analytics_purchased'
+                        : 'analytics_not_purchased',
+                  ),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
+            ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

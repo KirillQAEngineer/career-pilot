@@ -42,6 +42,7 @@ from app.services.application.job_requirements_service import (
 )
 from app.services.application.job_score_service import JobScoreService
 from app.services.jobs.factory import get_jobs_provider
+from app.services.jobs.deduplication import deduplicate_jobs
 
 router = APIRouter(
     prefix="/jobs",
@@ -422,29 +423,7 @@ def _merge_with_persistent_cache(
         logger.exception("Persistent job cache is unavailable")
         cached_jobs = []
 
-    merged: dict[str, Job] = {}
-
-    for job in [*fresh_jobs, *cached_jobs]:
-        normalized_url = normalize_job_url(job.url)
-        identity = normalized_url
-
-        if not identity and job.source.strip() and job.external_id.strip():
-            identity = (
-                f"{job.source.strip().casefold()}::{job.external_id.strip()}"
-            )
-
-        if not identity:
-            identity = "::".join(
-                [
-                    job.title.strip().casefold(),
-                    job.company.strip().casefold(),
-                    job.location.strip().casefold(),
-                ]
-            )
-
-        merged.setdefault(identity, job)
-
-    return list(merged.values())
+    return deduplicate_jobs([*fresh_jobs, *cached_jobs])
 
 
 @router.post("/interact", response_model=JobInteractionResponse)

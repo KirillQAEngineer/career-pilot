@@ -84,6 +84,7 @@ def payment_payload(
         "payment_status": status,
         "price_amount": amount,
         "price_currency": "usd",
+        "pay_currency": "usdttrc20",
         "order_id": order_id,
     }
 

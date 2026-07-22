@@ -82,6 +82,8 @@ docker compose exec api alembic revision -m "describe_change"
   отправка transactional email.
 - `NOWPAYMENTS_API_KEY` - серверный API key для создания криптосчетов.
 - `NOWPAYMENTS_IPN_SECRET` - секрет проверки подписанных уведомлений об оплате.
+- `NOWPAYMENTS_PAY_CURRENCY=usdttrc20` - единственная разрешённая валюта
+  платежа: USDT в сети Tron (TRC20).
 - `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=125` и
   `ANALYTICS_LIFETIME_PRICE_CURRENCY=USD` - реальная сумма счёта: 1.25 USD.
 - `ANALYTICS_LIFETIME_DISPLAY_PRICE=99 ₽` - рекламное отображение цены в UI.

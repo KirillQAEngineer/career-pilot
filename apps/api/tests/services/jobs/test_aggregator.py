@@ -7,11 +7,12 @@ from app.services.jobs.aggregator import JobsAggregator
 def make_job(
     title: str = "QA Engineer",
     external_id: str = "1",
+    location: str = "Remote",
 ) -> Job:
     return Job(
         title=title,
         company="Acme",
-        location="Remote",
+        location=location,
         url=f"https://example.com/jobs/{external_id}",
         source="TestProvider",
         external_id=external_id,
@@ -71,3 +72,16 @@ def test_aggregator_returns_partial_results_before_slow_provider_finishes():
 
     assert [job.external_id for job in jobs] == ["1"]
     assert elapsed < 0.15
+
+
+def test_aggregator_deduplicates_same_role_across_provider_locations():
+    aggregator = JobsAggregator()
+    jobs = [
+        make_job(external_id="north", location="Boston"),
+        make_job(external_id="south", location="Miami"),
+        make_job(title="Senior QA Engineer", external_id="senior"),
+    ]
+
+    deduplicated = aggregator._remove_duplicates(jobs)
+
+    assert [job.external_id for job in deduplicated] == ["north", "senior"]

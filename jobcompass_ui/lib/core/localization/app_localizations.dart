@@ -225,6 +225,9 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'no_users': 'No users found',
     'user_details': 'User details',
     'registered_at': 'Registered',
+    'subscription_status': 'Analytics purchase',
+    'analytics_purchased': 'Lifetime Analytics purchased',
+    'analytics_not_purchased': 'Analytics not purchased',
     'profile_data': 'Profile data',
     'profile_not_created': 'The user has not created a profile yet.',
     'resume_present': 'Resume uploaded',
@@ -276,7 +279,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'enter_email': 'Enter your email',
     'valid_email': 'Enter a valid email',
     'enter_password': 'Enter your password',
-    'password_min_length': 'Password must be at least 12 characters',
+    'password_min_length': 'Password must be at least 9 characters',
     'password_max_length': 'Password must be no longer than 128 characters',
     'confirm_password_required': 'Confirm your password',
     'passwords_do_not_match': 'Passwords do not match',
@@ -285,18 +288,19 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'create_account': 'Create a new account',
     'already_have_account': 'Already have an account? Sign in',
     'registration_check_email':
-        'Account created. Check your email and confirm it before signing in.',
+        'Account created. Check your Inbox and Spam folders, then confirm your email before signing in.',
     'email_verification_required':
-        'Confirm your email before signing in. You can request a new link below.',
+        'Confirm your email before signing in. Check the Inbox and Spam folders or request a new link below.',
     'resend_verification': 'Send the link again',
-    'verification_sent': 'A verification link has been sent to your email.',
+    'verification_sent':
+        'A verification link has been sent. Check your Inbox and Spam folders.',
     'failed_send_verification': 'Could not send the verification email.',
     'email_verification_success': 'Email confirmed. You can now sign in.',
     'email_verification_invalid':
         'This confirmation link is invalid or has expired.',
     'verify_email_prompt_title': 'Confirm your email',
     'verify_email_prompt_body':
-        'Confirm the address to protect your account and enable payments.',
+        'Confirm the address to protect your account and enable payments. After requesting the link, check your Inbox and Spam folders.',
     'verify_email': 'Confirm',
     'email_verified': 'Email confirmed',
     'email_not_verified': 'Email is not confirmed',
@@ -308,9 +312,11 @@ const Map<AppLanguage, Map<String, String>> _translations = {
         'Track applications, stages, comments and historical results. One payment, no recurring charge.',
     'buy_analytics_crypto': 'Pay {price} with crypto',
     'payment_invoice_amount':
-        'The invoice is {amount} {currency}; you choose the cryptocurrency on the payment page.',
+        'The invoice is {amount} {currency}. Select USDT on Tron (TRC20) on the payment page.',
     'payment_requires_verified_email':
         'Confirm your email in Profile before payment.',
+    'payment_usdt_trc20_notice':
+        'Use USDT on the Tron network (TRC20). Do not send USDT through another network.',
     'payment_unavailable':
         'Payment is temporarily unavailable. Please try again later.',
     'payment_open_failed': 'Could not open the secure payment page.',
@@ -509,7 +515,7 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'enter_email': 'Введите email',
     'valid_email': 'Введите корректный email',
     'enter_password': 'Введите пароль',
-    'password_min_length': 'Пароль должен быть не короче 12 символов',
+    'password_min_length': 'Пароль должен быть не короче 9 символов',
     'password_max_length': 'Пароль должен быть не длиннее 128 символов',
     'confirm_password_required': 'Повторите пароль',
     'passwords_do_not_match': 'Пароли не совпадают',
@@ -518,18 +524,19 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'create_account': 'Создать новый аккаунт',
     'already_have_account': 'Уже есть аккаунт? Войти',
     'registration_check_email':
-        'Аккаунт создан. Проверьте почту и подтвердите её перед входом.',
+        'Аккаунт создан. Проверьте папки «Входящие» и «Спам», затем подтвердите почту перед входом.',
     'email_verification_required':
-        'Подтвердите почту перед входом. Новую ссылку можно запросить ниже.',
+        'Подтвердите почту перед входом. Проверьте папки «Входящие» и «Спам» или запросите новую ссылку ниже.',
     'resend_verification': 'Отправить ссылку ещё раз',
-    'verification_sent': 'Ссылка подтверждения отправлена на вашу почту.',
+    'verification_sent':
+        'Ссылка подтверждения отправлена. Проверьте папки «Входящие» и «Спам».',
     'failed_send_verification': 'Не удалось отправить письмо подтверждения.',
     'email_verification_success': 'Почта подтверждена. Теперь можно войти.',
     'email_verification_invalid':
         'Ссылка подтверждения недействительна или устарела.',
     'verify_email_prompt_title': 'Подтвердите почту',
     'verify_email_prompt_body':
-        'Подтверждение защищает аккаунт и открывает возможность оплаты.',
+        'Подтверждение защищает аккаунт и открывает возможность оплаты. После запроса ссылки проверьте папки «Входящие» и «Спам».',
     'verify_email': 'Подтвердить',
     'email_verified': 'Почта подтверждена',
     'email_not_verified': 'Почта не подтверждена',
@@ -540,9 +547,11 @@ const Map<AppLanguage, Map<String, String>> _translations = {
         'Отслеживайте отклики, этапы, комментарии и исторические итоги. Один платёж без продления подписки.',
     'buy_analytics_crypto': 'Оплатить {price} криптовалютой',
     'payment_invoice_amount':
-        'Счёт выставляется на {amount} {currency}; криптовалюту вы выбираете на странице оплаты.',
+        'Счёт выставляется на {amount} {currency}. На странице оплаты выберите USDT в сети Tron (TRC20).',
     'payment_requires_verified_email':
         'Перед оплатой подтвердите почту в разделе «Профиль».',
+    'payment_usdt_trc20_notice':
+        'Оплачивайте только USDT в сети Tron (TRC20). Не отправляйте USDT через другую сеть.',
     'payment_unavailable': 'Оплата временно недоступна. Попробуйте позже.',
     'payment_open_failed': 'Не удалось открыть безопасную страницу оплаты.',
     'check_payment': 'Я оплатил — проверить платёж',
@@ -612,6 +621,9 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'no_users': 'Пользователи не найдены',
     'user_details': 'Информация о пользователе',
     'registered_at': 'Дата регистрации',
+    'subscription_status': 'Покупка Аналитики',
+    'analytics_purchased': 'Бессрочный тариф приобретён',
+    'analytics_not_purchased': 'Тариф не приобретён',
     'profile_data': 'Данные профиля',
     'profile_not_created': 'Пользователь ещё не создал профиль.',
     'resume_present': 'Резюме загружено',
