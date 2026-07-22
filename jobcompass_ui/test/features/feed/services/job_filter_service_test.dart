@@ -150,7 +150,6 @@ void main() {
     final savedJobs = [
       SavedJob(
         id: 10,
-        userId: 1,
         title: 'Senior QA Engineer',
         company: 'Acme',
         url: 'https://example.com/saved/10',
@@ -163,7 +162,6 @@ void main() {
       ),
       SavedJob(
         id: 11,
-        userId: 1,
         title: 'Backend Engineer',
         company: 'Beta',
         url: 'https://example.com/saved/11',

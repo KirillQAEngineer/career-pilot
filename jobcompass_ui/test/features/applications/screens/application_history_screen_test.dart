@@ -116,7 +116,6 @@ class FakeApplicationApi implements ApplicationApi {
 
     return Application(
       id: current.id,
-      userId: current.userId,
       jobTitle: current.jobTitle,
       jobCompany: current.jobCompany,
       jobUrl: current.jobUrl,
@@ -157,7 +156,6 @@ class FakeApplicationApi implements ApplicationApi {
 Application makeApplication({required int id, required String status}) {
   return Application(
     id: id,
-    userId: 1,
     jobTitle: 'Senior QA Engineer $id',
     jobCompany: 'Acme',
     jobUrl: 'https://example.com/jobs/$id',
@@ -405,7 +403,6 @@ void main() {
       completer.complete(
         Application(
           id: first.id,
-          userId: first.userId,
           jobTitle: first.jobTitle,
           jobCompany: first.jobCompany,
           jobUrl: first.jobUrl,

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.core.dependencies import require_admin
 from app.db.models.user import User
@@ -45,19 +46,19 @@ def admin_users(
 
 @router.get("/users/{user_id}", response_model=AdminUserDetail)
 def admin_user_detail(
-    user_id: int,
+    user_id: UUID,
     _: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    user = UserRepository(db).get(user_id)
+    user = UserRepository(db).get_by_public_id(user_id)
 
     if user is None:
         raise HTTPException(404, "User not found")
 
-    profile = ResumeProfileRepository(db).get_by_user_id(user_id)
+    profile = ResumeProfileRepository(db).get_by_user_id(user.id)
 
     return AdminUserDetail(
-        id=user.id,
+        id=user.public_id,
         email=user.email,
         full_name=user.full_name,
         is_admin=user.is_admin,
@@ -68,13 +69,13 @@ def admin_user_detail(
 
 @router.patch("/users/{user_id}/role", response_model=UserResponse)
 def update_admin_role(
-    user_id: int,
+    user_id: UUID,
     data: AdminRoleUpdate,
     current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     repository = UserRepository(db)
-    user = repository.get(user_id)
+    user = repository.get_by_public_id(user_id)
 
     if user is None:
         raise HTTPException(404, "User not found")

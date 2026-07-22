@@ -15,7 +15,6 @@ void main() {
   }) {
     return Application(
       id: id,
-      userId: 1,
       jobTitle: title ?? 'Job $id',
       jobCompany: 'Company',
       jobUrl: 'https://example.com/jobs/$id',

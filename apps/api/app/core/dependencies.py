@@ -1,4 +1,7 @@
-from jose import jwt, JWTError
+from uuid import UUID
+
+import jwt
+from jwt import InvalidTokenError
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -7,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db.repositories.user_repository import UserRepository
 from app.core.config import settings
+from app.core.security import ALGORITHM, TOKEN_AUDIENCE, TOKEN_ISSUER
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/login",
@@ -22,19 +26,25 @@ def get_current_user(
         payload = jwt.decode(
             token,
             settings.secret_key,
-            algorithms=["HS256"],
+            algorithms=[ALGORITHM],
+            audience=TOKEN_AUDIENCE,
+            issuer=TOKEN_ISSUER,
+            options={
+                "require": ["sub", "exp", "iat", "iss", "aud", "jti"],
+            },
         )
 
-        user_id = int(payload["sub"])
+        if payload.get("type") != "access":
+            raise InvalidTokenError("Invalid token type")
 
-    except JWTError as e:
-        print("JWT ERROR:", repr(e))
-        raise HTTPException(401, "Invalid token")
+        user_id = UUID(payload["sub"])
 
-    user = UserRepository(db).get(user_id)
+    except (InvalidTokenError, KeyError, TypeError, ValueError):
+        raise HTTPException(401, "Invalid token") from None
+
+    user = UserRepository(db).get_by_public_id(user_id)
 
     if not user:
-        print("USER NOT FOUND")
         raise HTTPException(401, "User not found")
 
     return user

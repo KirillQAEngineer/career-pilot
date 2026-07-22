@@ -148,7 +148,6 @@ Application makeApplication({
 }) {
   return Application(
     id: id,
-    userId: 1,
     jobTitle: 'QA Engineer $id',
     jobCompany: 'Company $id',
     jobUrl: 'https://example.com/jobs/$id',
@@ -179,7 +178,6 @@ void main() {
 
     const savedJob = SavedJob(
       id: 10,
-      userId: 1,
       title: 'Senior QA Engineer',
       company: 'Acme',
       url: 'https://example.com/jobs/qa-123',

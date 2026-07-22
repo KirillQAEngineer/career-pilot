@@ -67,6 +67,8 @@ class ResumeService:
                     "Please upload a text-based PDF or DOCX file."
                 ),
             ) from exception
+        finally:
+            file_path.unlink(missing_ok=True)
 
         if not resume_text:
             raise HTTPException(
@@ -144,11 +146,47 @@ class ResumeService:
 
         file_path = UPLOAD_DIR / filename
 
-        content = await file.read()
+        total_bytes = 0
+        first_chunk = True
 
-        file_path.write_bytes(content)
+        try:
+            with file_path.open("wb") as destination:
+                while chunk := await file.read(1024 * 1024):
+                    total_bytes += len(chunk)
+
+                    if total_bytes > settings.max_resume_upload_bytes:
+                        raise HTTPException(
+                            status_code=413,
+                            detail="Resume file is too large. Maximum size is 5 MB.",
+                        )
+
+                    if first_chunk:
+                        self._validate_file_signature(suffix, chunk)
+                        first_chunk = False
+
+                    destination.write(chunk)
+        except Exception:
+            file_path.unlink(missing_ok=True)
+            raise
+
+        if total_bytes == 0:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail="Resume file is empty.")
 
         return file_path
+
+    def _validate_file_signature(self, suffix: str, content: bytes) -> None:
+        valid_signature = (
+            suffix == ".pdf" and content.startswith(b"%PDF-")
+        ) or (
+            suffix == ".docx" and content.startswith(b"PK")
+        )
+
+        if not valid_signature:
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded file content does not match its extension.",
+            )
 
     def _extract_text(
         self,

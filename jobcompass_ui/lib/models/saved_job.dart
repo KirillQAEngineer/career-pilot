@@ -3,7 +3,6 @@ import 'package:jobcompass_ui/models/job.dart';
 
 class SavedJob implements FilterableJob {
   final int id;
-  final int userId;
   @override
   final String title;
   @override
@@ -23,7 +22,6 @@ class SavedJob implements FilterableJob {
 
   const SavedJob({
     required this.id,
-    required this.userId,
     required this.title,
     required this.company,
     required this.url,
@@ -67,7 +65,6 @@ class SavedJob implements FilterableJob {
   factory SavedJob.fromJson(Map<String, dynamic> json) {
     return SavedJob(
       id: json['id'] as int? ?? 0,
-      userId: json['user_id'] as int? ?? 0,
       title: json['job_title'] as String? ?? '',
       company: json['job_company'] as String? ?? '',
       url: json['job_url'] as String? ?? '',

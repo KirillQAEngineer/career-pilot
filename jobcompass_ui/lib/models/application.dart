@@ -2,7 +2,6 @@ import 'job.dart';
 
 class Application {
   final int id;
-  final int userId;
 
   final String jobTitle;
   final String jobCompany;
@@ -24,7 +23,6 @@ class Application {
 
   const Application({
     required this.id,
-    required this.userId,
     required this.jobTitle,
     required this.jobCompany,
     required this.jobUrl,
@@ -99,7 +97,6 @@ class Application {
   factory Application.fromJson(Map<String, dynamic> json) {
     return Application(
       id: json['id'] as int,
-      userId: json['user_id'] as int,
       jobTitle: json['job_title']?.toString() ?? '',
       jobCompany: json['job_company']?.toString() ?? '',
       jobUrl: json['job_url']?.toString() ?? '',

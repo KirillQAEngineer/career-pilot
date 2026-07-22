@@ -5,6 +5,8 @@ title: Deployment
 
 # Deployment
 
+Production-публикация Flutter Web выполняется только после успешного check `CI Passed` для commit в `main`. Полная последовательность jobs описана в разделе [CI/CD и практика автотестов](./ci-cd.md).
+
 JobCompass публикуется в три части:
 
 - GitHub Pages - статический Flutter Web frontend и Docusaurus документация.
@@ -30,15 +32,16 @@ https://kirillqaengineer.github.io/JobCompass/docs/
 Workflow находится здесь:
 
 ```text
-.github/workflows/github-pages.yml
+.github/workflows/ci-cd.yml
 ```
 
 Он выполняет:
 
-1. Сборку Flutter Web.
-2. Сборку Docusaurus.
-3. Копирование Docusaurus build в `build/web/docs`.
-4. Публикацию результата через GitHub Pages.
+1. Проверку backend, миграций и API на временной PostgreSQL.
+2. Flutter format, analyze, autotests и production Web build.
+3. Проверку и сборку Docusaurus.
+4. Сборку Docker image backend.
+5. Публикацию проверенных Flutter и Docusaurus artifacts через GitHub Pages только для `main`.
 
 ## Настройка GitHub Pages
 

@@ -65,7 +65,7 @@ class AdminApi {
         .toList();
   }
 
-  Future<AdminUserDetail> fetchUser(int userId) async {
+  Future<AdminUserDetail> fetchUser(String userId) async {
     final response = await dio.get('/admin/users/$userId');
 
     return AdminUserDetail.fromJson(
@@ -74,7 +74,7 @@ class AdminApi {
   }
 
   Future<AccountUser> updateAdminRole({
-    required int userId,
+    required String userId,
     required bool isAdmin,
   }) async {
     final response = await dio.patch(

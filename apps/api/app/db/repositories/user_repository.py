@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.core.security import hash_password
 from app.db.models.user import User
@@ -39,6 +40,9 @@ class UserRepository:
 
     def get(self, user_id: int):
         return self.db.query(User).filter(User.id == user_id).first()
+
+    def get_by_public_id(self, public_id: UUID):
+        return self.db.query(User).filter(User.public_id == public_id).first()
 
     def get_by_email(self, email: str):
         return self.db.query(User).filter(User.email == email).first()
