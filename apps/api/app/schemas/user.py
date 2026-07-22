@@ -8,7 +8,7 @@ from app.schemas.resume_profile_response import ResumeProfileResponse
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=9, max_length=128)
     full_name: str = Field(min_length=1, max_length=255)
 
     @field_validator("full_name")

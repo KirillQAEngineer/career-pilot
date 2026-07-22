@@ -16,6 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final passwordFocusNode = FocusNode();
 
   final formKey = GlobalKey<FormState>();
 
@@ -29,16 +30,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    passwordFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> submit() async {
-    FocusScope.of(context).unfocus();
-
     if (!formKey.currentState!.validate()) {
+      if (isRegisterMode && passwordController.text.length < 9) {
+        passwordFocusNode.requestFocus();
+      }
       return;
     }
 
+    FocusScope.of(context).unfocus();
     final authNotifier = ref.read(authProvider.notifier);
 
     if (isRegisterMode) {
@@ -54,6 +58,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           passwordController.clear();
           confirmPasswordController.clear();
         });
+      } else if (mounted) {
+        passwordFocusNode.requestFocus();
       }
     } else {
       await authNotifier.login(
@@ -74,6 +80,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       passwordController.clear();
       confirmPasswordController.clear();
     });
+  }
+
+  void handlePasswordChanged(String _) {
+    if (ref.read(authProvider).error != null) {
+      ref.read(authProvider.notifier).clearError();
+    }
   }
 
   @override
@@ -182,6 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     TextFormField(
                       controller: passwordController,
+                      focusNode: passwordFocusNode,
                       obscureText: obscurePassword,
                       autocorrect: false,
                       enableSuggestions: false,
@@ -210,7 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return context.tr('enter_password');
                         }
 
-                        if (isRegisterMode && value.length < 12) {
+                        if (isRegisterMode && value.length < 9) {
                           return context.tr('password_min_length');
                         }
 
@@ -220,6 +233,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                         return null;
                       },
+                      onChanged: handlePasswordChanged,
                       onFieldSubmitted: (_) {
                         if (!isRegisterMode && !authState.isLoading) {
                           submit();
@@ -265,6 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           return null;
                         },
+                        onChanged: handlePasswordChanged,
                         onFieldSubmitted: (_) {
                           if (!authState.isLoading) {
                             submit();

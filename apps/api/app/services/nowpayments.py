@@ -47,6 +47,7 @@ class NowPaymentsClient:
             json={
                 "price_amount": self._amount_value(payment),
                 "price_currency": payment.currency.lower(),
+                "pay_currency": settings.nowpayments_pay_currency.lower(),
                 "order_id": str(payment.public_id),
                 "order_description": (
                     "JobCompass lifetime Analytics access"
@@ -121,6 +122,8 @@ class NowPaymentsClient:
             or received_amount != expected_amount
             or str(payload.get("price_currency", "")).upper()
             != payment.currency.upper()
+            or str(payload.get("pay_currency", "")).casefold()
+            != settings.nowpayments_pay_currency.casefold()
         ):
             raise NowPaymentsInvalidPayment("Payment metadata mismatch")
 

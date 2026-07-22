@@ -29,6 +29,7 @@ from app.services.jobs.geekjob import GeekJobProvider
 from app.services.jobs.logger import JobLogger
 from app.services.jobs.quality_pipeline import JobQualityPipeline
 from app.services.jobs.metadata_normalizer import JobMetadataNormalizer
+from app.services.jobs.deduplication import deduplicate_jobs
 
 
 class JobsAggregator:
@@ -182,18 +183,4 @@ class JobsAggregator:
             )
 
     def _remove_duplicates(self, jobs: list[Job]) -> list[Job]:
-
-        unique = {}
-
-        for job in jobs:
-
-            key = (
-                job.title.strip().lower(),
-                job.company.strip().lower(),
-                job.location.strip().lower(),
-            )
-
-            if key not in unique:
-                unique[key] = job
-
-        return list(unique.values())
+        return deduplicate_jobs(jobs)
