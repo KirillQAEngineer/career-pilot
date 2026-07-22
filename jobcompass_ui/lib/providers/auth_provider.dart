@@ -104,13 +104,16 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> _clearSession({String? error}) async {
-    final preferences = await SharedPreferences.getInstance();
-
-    await preferences.remove(_tokenKey);
     ApiClient.clearToken();
     ref.invalidate(currentUserProvider);
-
     state = AuthState(isAuthenticated: false, isLoading: false, error: error);
+
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_tokenKey);
+    } catch (_) {
+      // Routing to sign in must not depend on browser storage availability.
+    }
   }
 
   Future<bool> login({required String email, required String password}) async {

@@ -91,6 +91,17 @@ class UserRepository:
 
         return user
 
+    def update_analytics_lifetime_access(
+        self,
+        user: User,
+        has_access: bool,
+    ) -> User:
+        user.analytics_lifetime_access = has_access
+        self.db.commit()
+        self.db.refresh(user)
+
+        return user
+
     def update_admin_role(
         self,
         user: User,

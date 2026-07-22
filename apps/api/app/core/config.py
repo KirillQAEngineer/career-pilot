@@ -40,9 +40,9 @@ class Settings(BaseSettings):
     nowpayments_api_key: str = ""
     nowpayments_ipn_secret: str = ""
     nowpayments_pay_currency: str = "usdttrc20"
-    analytics_lifetime_price_minor_units: int = 125
+    analytics_lifetime_price_minor_units: int = 100
     analytics_lifetime_price_currency: str = "USD"
-    analytics_lifetime_display_price: str = "99 ₽"
+    analytics_lifetime_display_price: str = "from 1 USDT"
 
     backend_cors_origins: str = (
         "http://localhost,"

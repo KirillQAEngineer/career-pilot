@@ -122,6 +122,33 @@ void main() {
   });
 
   test(
+    'logout leaves loading state immediately and clears the session',
+    () async {
+      SharedPreferences.setMockInitialValues({'access_token': 'valid-token'});
+      ApiClient.dio.httpClientAdapter = _FakeAdapter(
+        (_) => _jsonResponse('{}', 200),
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(authProvider);
+      await _waitForAuthState(container, (state) => state.isAuthenticated);
+
+      final logout = container.read(authProvider.notifier).logout();
+      final stateDuringStorageCleanup = container.read(authProvider);
+
+      expect(stateDuringStorageCleanup.isAuthenticated, isFalse);
+      expect(stateDuringStorageCleanup.isLoading, isFalse);
+
+      await logout;
+      final preferences = await SharedPreferences.getInstance();
+
+      expect(preferences.getString('access_token'), isNull);
+      expect(ApiClient.dio.options.headers['Authorization'], isNull);
+    },
+  );
+
+  test(
     'registration waits for email confirmation instead of storing token',
     () async {
       SharedPreferences.setMockInitialValues({});

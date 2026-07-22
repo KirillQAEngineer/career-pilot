@@ -42,6 +42,29 @@ class AdminDashboardNotifier extends AsyncNotifier<AdminDashboardData> {
       return false;
     }
   }
+
+  Future<bool> updateAnalyticsAccess({
+    required String userId,
+    required bool hasAccess,
+  }) async {
+    try {
+      await _api.updateAnalyticsAccess(userId: userId, hasAccess: hasAccess);
+      ref.invalidate(adminUserProvider(userId));
+      ref.invalidate(currentUserProvider);
+      final results = await Future.wait([_api.fetchStats(), _api.fetchUsers()]);
+
+      state = AsyncData(
+        AdminDashboardData(
+          stats: results[0] as AdminStats,
+          users: results[1] as List<AccountUser>,
+        ),
+      );
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final adminDashboardProvider =

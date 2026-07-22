@@ -1,6 +1,7 @@
+from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BillingStatusResponse(BaseModel):
@@ -11,6 +12,15 @@ class BillingStatusResponse(BaseModel):
     currency: str
     display_price: str
     latest_payment_status: str | None = None
+
+
+class CheckoutRequest(BaseModel):
+    amount_usdt: Decimal = Field(
+        ge=Decimal("1"),
+        le=Decimal("100000"),
+        max_digits=8,
+        decimal_places=2,
+    )
 
 
 class CheckoutResponse(BaseModel):

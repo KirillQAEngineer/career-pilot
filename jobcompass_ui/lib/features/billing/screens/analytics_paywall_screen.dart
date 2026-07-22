@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,12 +17,43 @@ class AnalyticsPaywallScreen extends ConsumerStatefulWidget {
 
 class _AnalyticsPaywallScreenState
     extends ConsumerState<AnalyticsPaywallScreen> {
+  final _amountController = TextEditingController(text: '1');
   bool _openingPayment = false;
-  bool _checkingPayment = false;
+  String? _amountError;
+  Timer? _paymentStatusTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentStatusTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) =>
+          unawaited(ref.read(billingProvider.notifier).refreshStatusSilently()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _paymentStatusTimer?.cancel();
+    _amountController.dispose();
+    super.dispose();
+  }
 
   Future<void> _buy() async {
-    setState(() => _openingPayment = true);
-    final checkout = await ref.read(billingProvider.notifier).createCheckout();
+    final amount = _validatedAmount();
+
+    if (amount == null) {
+      setState(() => _amountError = context.tr('payment_amount_invalid'));
+      return;
+    }
+
+    setState(() {
+      _amountError = null;
+      _openingPayment = true;
+    });
+    final checkout = await ref
+        .read(billingProvider.notifier)
+        .createCheckout(amountUsdt: amount);
 
     if (!mounted) {
       return;
@@ -44,22 +77,22 @@ class _AnalyticsPaywallScreenState
     }
   }
 
-  Future<void> _checkPayment() async {
-    setState(() => _checkingPayment = true);
-    final active = await ref.read(billingProvider.notifier).refreshPayment();
+  String? _validatedAmount() {
+    final normalized = _amountController.text.trim().replaceAll(',', '.');
+    final amount = double.tryParse(normalized);
+    final hasSupportedPrecision = RegExp(
+      r'^\d+(?:\.\d{1,2})?$',
+    ).hasMatch(normalized);
 
-    if (!mounted) {
-      return;
+    if (!hasSupportedPrecision || amount == null || amount < 1) {
+      return null;
     }
 
-    setState(() => _checkingPayment = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.tr(active ? 'analytics_access_active' : 'payment_pending'),
-        ),
-      ),
-    );
+    if (amount > 100000) {
+      return null;
+    }
+
+    return normalized;
   }
 
   @override
@@ -108,12 +141,36 @@ class _AnalyticsPaywallScreenState
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        context
-                            .tr('payment_invoice_amount')
-                            .replaceAll('{amount}', status.invoiceAmount)
-                            .replaceAll('{currency}', status.currency),
+                        context.tr('payment_custom_amount_hint'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _amountController,
+                        enabled: !_openingPayment,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: context.tr('payment_amount_label'),
+                          helperText: context.tr('payment_amount_helper'),
+                          errorText: _amountError,
+                          suffixText: 'USDT',
+                          prefixIcon: const Icon(Icons.payments_outlined),
+                        ),
+                        onChanged: (_) {
+                          if (_amountError != null) {
+                            setState(() => _amountError = null);
+                          }
+                        },
+                        onSubmitted: (_) {
+                          if (!_openingPayment &&
+                              status.emailVerified &&
+                              status.checkoutAvailable) {
+                            _buy();
+                          }
+                        },
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -175,28 +232,8 @@ class _AnalyticsPaywallScreenState
                                   ),
                                 )
                               : const Icon(Icons.lock_open_outlined),
-                          label: Text(
-                            context
-                                .tr('buy_analytics_crypto')
-                                .replaceAll('{price}', status.displayPrice),
-                          ),
+                          label: Text(context.tr('buy_analytics_crypto')),
                         ),
-                      if (_canCheck(status.latestPaymentStatus)) ...[
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: _checkingPayment ? null : _checkPayment,
-                          icon: _checkingPayment
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.refresh),
-                          label: Text(context.tr('check_payment')),
-                        ),
-                      ],
                       const SizedBox(height: 14),
                       Text(
                         context.tr('payment_security_note'),
@@ -212,16 +249,5 @@ class _AnalyticsPaywallScreenState
         ),
       ),
     );
-  }
-
-  bool _canCheck(String? paymentStatus) {
-    return const {
-      'pending',
-      'waiting',
-      'confirming',
-      'confirmed',
-      'sending',
-      'partially_paid',
-    }.contains(paymentStatus);
   }
 }

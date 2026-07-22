@@ -239,6 +239,13 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'confirm': 'Confirm',
     'admin_role_updated': 'Administrator rights updated',
     'failed_admin_role': 'Could not update administrator rights',
+    'grant_analytics_access': 'Grant lifetime Analytics access',
+    'revoke_analytics_access': 'Revoke lifetime Analytics access',
+    'change_analytics_access_confirmation':
+        'The user tariff status will change immediately. Continue?',
+    'analytics_access_updated': 'Analytics tariff status updated',
+    'failed_analytics_access_update':
+        'Could not update the Analytics tariff status',
     'cannot_change_own_role':
         'You cannot revoke your own administrator rights.',
     'admin_access_error':
@@ -305,24 +312,25 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'email_verified': 'Email confirmed',
     'email_not_verified': 'Email is not confirmed',
     'analytics_promo_short':
-        'Lifetime access to job search Analytics — 99 ₽ once',
+        'Lifetime job search Analytics — pay any amount from 1 USDT',
     'learn_more': 'Learn more',
-    'analytics_lifetime_title': 'Analytics forever for 99 ₽',
+    'analytics_lifetime_title': 'Analytics forever — from 1 USDT',
     'analytics_lifetime_body':
-        'Track applications, stages, comments and historical results. One payment, no recurring charge.',
-    'buy_analytics_crypto': 'Pay {price} with crypto',
-    'payment_invoice_amount':
-        'The invoice is {amount} {currency}. Select USDT on Tron (TRC20) on the payment page.',
+        'Choose any contribution from 1 USDT and get lifetime access without recurring charges.',
+    'buy_analytics_crypto': 'Continue to USDT payment',
+    'payment_custom_amount_hint':
+        'Enter any amount you want to pay, starting from 1 USDT.',
+    'payment_amount_label': 'Payment amount',
+    'payment_amount_helper': 'Minimum 1 USDT, up to two decimal places',
+    'payment_amount_invalid':
+        'Enter an amount from 1 to 100,000 USDT with up to two decimal places.',
     'payment_requires_verified_email':
         'Confirm your email in Profile before payment.',
     'payment_usdt_trc20_notice':
-        'Use USDT on the Tron network (TRC20). Do not send USDT through another network.',
+        'Use USDT on the Tron network (TRC20). NOWPayments may slightly adjust the final USDT amount due to its exchange rate and network fee.',
     'payment_unavailable':
         'Payment is temporarily unavailable. Please try again later.',
     'payment_open_failed': 'Could not open the secure payment page.',
-    'check_payment': 'I paid — check payment',
-    'payment_pending': 'Payment has not been confirmed yet.',
-    'analytics_access_active': 'Analytics access is active.',
     'payment_security_note':
         'Payment is completed on NOWPayments. JobCompass does not receive or store wallet keys.',
     'why_matches': 'Why this matches',
@@ -540,23 +548,25 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'verify_email': 'Подтвердить',
     'email_verified': 'Почта подтверждена',
     'email_not_verified': 'Почта не подтверждена',
-    'analytics_promo_short': 'Бессрочный доступ к Аналитике — один платёж 99 ₽',
+    'analytics_promo_short': 'Бессрочная Аналитика — любая сумма от 1 USDT',
     'learn_more': 'Подробнее',
-    'analytics_lifetime_title': 'Аналитика навсегда за 99 ₽',
+    'analytics_lifetime_title': 'Аналитика навсегда — от 1 USDT',
     'analytics_lifetime_body':
-        'Отслеживайте отклики, этапы, комментарии и исторические итоги. Один платёж без продления подписки.',
-    'buy_analytics_crypto': 'Оплатить {price} криптовалютой',
-    'payment_invoice_amount':
-        'Счёт выставляется на {amount} {currency}. На странице оплаты выберите USDT в сети Tron (TRC20).',
+        'Выберите любую сумму от 1 USDT и получите бессрочный доступ без продления подписки.',
+    'buy_analytics_crypto': 'Перейти к оплате USDT',
+    'payment_custom_amount_hint':
+        'Введите любую сумму, которую хотите отправить, начиная от 1 USDT.',
+    'payment_amount_label': 'Сумма платежа',
+    'payment_amount_helper':
+        'Минимум 1 USDT, не более двух знаков после запятой',
+    'payment_amount_invalid':
+        'Введите сумму от 1 до 100 000 USDT, не более двух знаков после запятой.',
     'payment_requires_verified_email':
         'Перед оплатой подтвердите почту в разделе «Профиль».',
     'payment_usdt_trc20_notice':
-        'Оплачивайте только USDT в сети Tron (TRC20). Не отправляйте USDT через другую сеть.',
+        'Оплачивайте USDT только в сети Tron (TRC20). NOWPayments может немного скорректировать итоговую сумму USDT из-за курса и сетевой комиссии.',
     'payment_unavailable': 'Оплата временно недоступна. Попробуйте позже.',
     'payment_open_failed': 'Не удалось открыть безопасную страницу оплаты.',
-    'check_payment': 'Я оплатил — проверить платёж',
-    'payment_pending': 'Платёж пока не подтверждён.',
-    'analytics_access_active': 'Доступ к Аналитике активирован.',
     'payment_security_note':
         'Оплата проходит на стороне NOWPayments. JobCompass не получает и не хранит ключи вашего кошелька.',
     'why_matches': 'Почему подходит',
@@ -635,6 +645,13 @@ const Map<AppLanguage, Map<String, String>> _translations = {
     'confirm': 'Подтвердить',
     'admin_role_updated': 'Права администратора обновлены',
     'failed_admin_role': 'Не удалось изменить права администратора',
+    'grant_analytics_access': 'Выдать бессрочный доступ к Аналитике',
+    'revoke_analytics_access': 'Забрать бессрочный доступ к Аналитике',
+    'change_analytics_access_confirmation':
+        'Статус тарифа пользователя изменится сразу. Продолжить?',
+    'analytics_access_updated': 'Статус тарифа Аналитики обновлён',
+    'failed_analytics_access_update':
+        'Не удалось изменить статус тарифа Аналитики',
     'cannot_change_own_role':
         'Нельзя забрать права администратора у собственного аккаунта.',
     'admin_access_error':

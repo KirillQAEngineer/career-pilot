@@ -98,11 +98,25 @@ def test_admin_can_view_users_and_manage_roles():
         headers=authorize(admin_token),
         json={"is_admin": True},
     )
+    access_granted = client.patch(
+        f"/admin/users/{member['id']}/analytics-access",
+        headers=authorize(admin_token),
+        json={"analytics_lifetime_access": True},
+    )
+    access_revoked = client.patch(
+        f"/admin/users/{member['id']}/analytics-access",
+        headers=authorize(admin_token),
+        json={"analytics_lifetime_access": False},
+    )
 
     assert detail.status_code == 200
     assert detail.json()["profile"] is None
     assert promoted.status_code == 200
     assert promoted.json()["is_admin"] is True
+    assert access_granted.status_code == 200
+    assert access_granted.json()["analytics_lifetime_access"] is True
+    assert access_revoked.status_code == 200
+    assert access_revoked.json()["analytics_lifetime_access"] is False
 
     app.dependency_overrides.clear()
 
@@ -124,6 +138,23 @@ def test_admin_cannot_remove_own_role():
     )
 
     assert response.status_code == 400
+
+    app.dependency_overrides.clear()
+
+
+def test_non_admin_cannot_change_analytics_access():
+    client, _ = build_client()
+    token = register(client, "user@example.com")
+    users_response = client.get("/auth/me", headers=authorize(token))
+    user_id = users_response.json()["id"]
+
+    response = client.patch(
+        f"/admin/users/{user_id}/analytics-access",
+        headers=authorize(token),
+        json={"analytics_lifetime_access": True},
+    )
+
+    assert response.status_code == 403
 
     app.dependency_overrides.clear()
 

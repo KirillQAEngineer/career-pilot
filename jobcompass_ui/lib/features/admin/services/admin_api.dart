@@ -86,4 +86,18 @@ class AdminApi {
       Map<String, dynamic>.from(response.data as Map),
     );
   }
+
+  Future<AccountUser> updateAnalyticsAccess({
+    required String userId,
+    required bool hasAccess,
+  }) async {
+    final response = await dio.patch(
+      '/admin/users/$userId/analytics-access',
+      data: {'analytics_lifetime_access': hasAccess},
+    );
+
+    return AccountUser.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
+  }
 }

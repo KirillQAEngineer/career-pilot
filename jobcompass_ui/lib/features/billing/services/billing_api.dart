@@ -14,15 +14,13 @@ class BillingApi {
     );
   }
 
-  Future<AnalyticsCheckout> createCheckout() async {
-    final response = await _dio.post('/billing/analytics-lifetime/checkout');
+  Future<AnalyticsCheckout> createCheckout({required String amountUsdt}) async {
+    final response = await _dio.post(
+      '/billing/analytics-lifetime/checkout',
+      data: {'amount_usdt': amountUsdt},
+    );
     return AnalyticsCheckout.fromJson(
       Map<String, dynamic>.from(response.data as Map),
     );
-  }
-
-  Future<BillingStatus> refreshPayment() async {
-    await _dio.post('/billing/analytics-lifetime/refresh');
-    return getStatus();
   }
 }

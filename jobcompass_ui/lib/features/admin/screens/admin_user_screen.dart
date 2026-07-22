@@ -59,6 +59,62 @@ class AdminUserScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _changeAnalyticsAccess({
+    required BuildContext context,
+    required WidgetRef ref,
+    required bool hasAccess,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          context.tr(
+            hasAccess ? 'revoke_analytics_access' : 'grant_analytics_access',
+          ),
+        ),
+        content: Text(context.tr('change_analytics_access_confirmation')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.tr('confirm')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    final success = await ref
+        .read(adminDashboardProvider.notifier)
+        .updateAnalyticsAccess(userId: userId, hasAccess: !hasAccess);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr(
+            success
+                ? 'analytics_access_updated'
+                : 'failed_analytics_access_update',
+          ),
+        ),
+      ),
+    );
+
+    if (success) {
+      ref.invalidate(adminUserProvider(userId));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userDetail = ref.watch(adminUserProvider(userId));
@@ -146,6 +202,29 @@ class AdminUserScreen extends ConsumerWidget {
               const SizedBox(height: 10),
               _ProfileCard(profile: profile),
               const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => _changeAnalyticsAccess(
+                  context: context,
+                  ref: ref,
+                  hasAccess: user.analyticsLifetimeAccess,
+                ),
+                icon: Icon(
+                  user.analyticsLifetimeAccess
+                      ? Icons.lock_person_outlined
+                      : Icons.workspace_premium_outlined,
+                ),
+                label: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    context.tr(
+                      user.analyticsLifetimeAccess
+                          ? 'revoke_analytics_access'
+                          : 'grant_analytics_access',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               FilledButton.tonalIcon(
                 onPressed: canChangeRole
                     ? () => _changeRole(

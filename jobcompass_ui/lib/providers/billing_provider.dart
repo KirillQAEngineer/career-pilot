@@ -15,28 +15,28 @@ class BillingNotifier extends AsyncNotifier<BillingStatus> {
   @override
   Future<BillingStatus> build() => _api.getStatus();
 
-  Future<AnalyticsCheckout?> createCheckout() async {
+  Future<AnalyticsCheckout?> createCheckout({
+    required String amountUsdt,
+  }) async {
     try {
-      return await _api.createCheckout();
+      return await _api.createCheckout(amountUsdt: amountUsdt);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
       return null;
     }
   }
 
-  Future<bool> refreshPayment() async {
+  Future<void> refreshStatusSilently() async {
     try {
-      final status = await _api.refreshPayment();
+      final status = await _api.getStatus();
       state = AsyncData(status);
 
       if (status.hasAnalyticsAccess) {
         ref.invalidate(currentUserProvider);
       }
-
-      return status.hasAnalyticsAccess;
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-      return false;
+    } catch (_) {
+      // The next timer tick retries without replacing the paywall with an
+      // error screen when the backend is temporarily waking up.
     }
   }
 }
