@@ -75,4 +75,4 @@ class JobScoreService:
             if kw in title:
                 score -= 50
 
-        return max(score, 0)
+        return min(max(score, 0), 100)

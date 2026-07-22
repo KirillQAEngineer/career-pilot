@@ -151,6 +151,22 @@ def test_registration_rejects_weak_password():
     app.dependency_overrides.clear()
 
 
+def test_registration_accepts_nine_character_password():
+    client = build_client()
+
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": "nine@example.com",
+            "password": "nine-char",
+            "full_name": "Nine Character Password",
+        },
+    )
+
+    assert response.status_code == 202
+    app.dependency_overrides.clear()
+
+
 def test_login_is_rate_limited_per_account():
     client = build_client()
     client.post(

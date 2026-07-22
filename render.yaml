@@ -41,6 +41,8 @@ services:
         sync: false
       - key: NOWPAYMENTS_IPN_SECRET
         sync: false
+      - key: NOWPAYMENTS_PAY_CURRENCY
+        value: usdttrc20
       - key: ANALYTICS_LIFETIME_PRICE_MINOR_UNITS
         value: 125
       - key: ANALYTICS_LIFETIME_PRICE_CURRENCY

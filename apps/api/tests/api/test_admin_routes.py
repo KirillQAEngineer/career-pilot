@@ -88,6 +88,7 @@ def test_admin_can_view_users_and_manage_roles():
     member = next(
         user for user in users.json() if user["email"] == "member@example.com"
     )
+    assert member["analytics_lifetime_access"] is False
     detail = client.get(
         f"/admin/users/{member['id']}",
         headers=authorize(admin_token),

@@ -122,6 +122,16 @@ class AdminUserScreen extends ConsumerWidget {
                         user.isAdmin ? 'administrator_role' : 'user_role',
                       ),
                     ),
+                    const Divider(height: 1),
+                    _DetailRow(
+                      icon: Icons.workspace_premium_outlined,
+                      label: context.tr('subscription_status'),
+                      value: context.tr(
+                        user.analyticsLifetimeAccess
+                            ? 'analytics_purchased'
+                            : 'analytics_not_purchased',
+                      ),
+                    ),
                     if (user.createdAt != null) ...[
                       const Divider(height: 1),
                       _DetailRow(

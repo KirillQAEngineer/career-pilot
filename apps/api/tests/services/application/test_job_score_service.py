@@ -21,7 +21,7 @@ def test_scores_qa_engineer_role_keywords():
         make_job("Senior QA Automation Engineer"),
     )
 
-    assert score >= 70
+    assert 70 <= score <= 100
 
 
 def test_software_tester_is_not_spam_penalized():
