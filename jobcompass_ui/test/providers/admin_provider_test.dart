@@ -60,6 +60,29 @@ class FakeAdminApi extends AdminApi {
 
     return updated;
   }
+
+  @override
+  Future<AccountUser> updateAnalyticsAccess({
+    required String userId,
+    required bool hasAccess,
+  }) async {
+    final current = users.firstWhere((user) => user.id == userId);
+    final updated = AccountUser(
+      id: current.id,
+      email: current.email,
+      fullName: current.fullName,
+      isAdmin: current.isAdmin,
+      analyticsLifetimeAccess: hasAccess,
+      createdAt: current.createdAt,
+    );
+
+    users = [
+      for (final user in users)
+        if (user.id == userId) updated else user,
+    ];
+
+    return updated;
+  }
 }
 
 void main() {
@@ -94,5 +117,22 @@ void main() {
           .isAdmin,
       isTrue,
     );
+
+    final accessUpdated = await container
+        .read(adminDashboardProvider.notifier)
+        .updateAnalyticsAccess(
+          userId: '22222222-2222-4222-8222-222222222222',
+          hasAccess: true,
+        );
+    final userWithAccess = container
+        .read(adminDashboardProvider)
+        .requireValue
+        .users
+        .firstWhere(
+          (user) => user.id == '22222222-2222-4222-8222-222222222222',
+        );
+
+    expect(accessUpdated, isTrue);
+    expect(userWithAccess.analyticsLifetimeAccess, isTrue);
   });
 }

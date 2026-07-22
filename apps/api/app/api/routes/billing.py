@@ -14,6 +14,7 @@ from app.db.repositories.user_repository import UserRepository
 from app.db.session import get_db
 from app.schemas.billing import (
     BillingStatusResponse,
+    CheckoutRequest,
     CheckoutResponse,
     PaymentStatusResponse,
 )
@@ -60,6 +61,7 @@ def billing_status(
     response_model=CheckoutResponse,
 )
 def create_checkout(
+    request: CheckoutRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -76,18 +78,23 @@ def create_checkout(
     )
     repository = PaymentRepository(db)
     latest = repository.get_latest_for_user(current_user.id)
+    amount_minor_units = int(request.amount_usdt * 100)
 
     if (
         latest
         and latest.status in ACTIVE_PAYMENT_STATUSES
         and latest.confirmation_url
+        and latest.amount_minor_units == amount_minor_units
     ):
         return _checkout_response(latest)
+
+    if latest and latest.status in ACTIVE_PAYMENT_STATUSES:
+        repository.mark_failed(latest)
 
     payment = repository.create_pending(
         user_id=current_user.id,
         product=PRODUCT,
-        amount_minor_units=settings.analytics_lifetime_price_minor_units,
+        amount_minor_units=amount_minor_units,
         currency=settings.analytics_lifetime_price_currency.upper(),
     )
 

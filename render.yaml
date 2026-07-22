@@ -44,8 +44,8 @@ services:
       - key: NOWPAYMENTS_PAY_CURRENCY
         value: usdttrc20
       - key: ANALYTICS_LIFETIME_PRICE_MINOR_UNITS
-        value: 125
+        value: 100
       - key: ANALYTICS_LIFETIME_PRICE_CURRENCY
         value: USD
       - key: ANALYTICS_LIFETIME_DISPLAY_PRICE
-        value: 99 ₽
+        value: from 1 USDT

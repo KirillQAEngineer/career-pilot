@@ -84,9 +84,12 @@ docker compose exec api alembic revision -m "describe_change"
 - `NOWPAYMENTS_IPN_SECRET` - секрет проверки подписанных уведомлений об оплате.
 - `NOWPAYMENTS_PAY_CURRENCY=usdttrc20` - единственная разрешённая валюта
   платежа: USDT в сети Tron (TRC20).
-- `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=125` и
-  `ANALYTICS_LIFETIME_PRICE_CURRENCY=USD` - реальная сумма счёта: 1.25 USD.
-- `ANALYTICS_LIFETIME_DISPLAY_PRICE=99 ₽` - рекламное отображение цены в UI.
+- `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=100` - минимальная разрешённая сумма
+  счёта: эквивалент 1 USDT. Пользователь может указать любую большую сумму.
+- `ANALYTICS_LIFETIME_PRICE_CURRENCY=USD` - базовая валюта hosted invoice;
+  NOWPayments рассчитывает итоговый `pay_amount` в USDT TRC20.
+- `ANALYTICS_LIFETIME_DISPLAY_PRICE=from 1 USDT` - единая рекламная цена для
+  всех языков.
 - AI provider keys - ключи используемых AI-провайдеров.
 
 ## Публичный запуск
@@ -118,7 +121,10 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 - `DELETE /profile/me/resume` удаляет только текст загруженного резюме, сохраняя ручные поля профиля.
 - `/admin/*` доступен только пользователям с `is_admin = true`; проверка выполняется на backend, а не только скрытием вкладки в UI.
 - `GET /admin/stats` и `GET /admin/users` возвращают общую статистику и список аккаунтов.
-- `GET /admin/users/{id}` возвращает карточку пользователя, а `PATCH /admin/users/{id}/role` меняет его роль.
+- `GET /admin/users/{id}` возвращает карточку пользователя,
+  `PATCH /admin/users/{id}/role` меняет его роль, а
+  `PATCH /admin/users/{id}/analytics-access` выдаёт или отзывает бессрочный
+  доступ к Аналитике.
 
 ## Подтверждение email
 
@@ -133,7 +139,8 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ## Платный доступ к Аналитике
 
 - `GET /billing/me` возвращает право доступа и состояние последнего платежа.
-- `POST /billing/analytics-lifetime/checkout` создаёт криптосчёт NOWPayments.
+- `POST /billing/analytics-lifetime/checkout` принимает `amount_usdt` от 1 до
+  100 000 с точностью до двух знаков и создаёт криптосчёт NOWPayments.
 - `POST /billing/analytics-lifetime/refresh` безопасно перепроверяет платёж.
 - `POST /billing/nowpayments/ipn` принимает уведомление, проверяет его
   HMAC-SHA512 подпись, а затем независимо читает платёж из API провайдера.

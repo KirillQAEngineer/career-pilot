@@ -75,7 +75,7 @@ def payment_payload(
     payment_id: str,
     invoice_id: str,
     order_id: str,
-    amount: str = "1.25",
+    amount: str = "1.50",
     status: str = "finished",
 ) -> dict:
     return {
@@ -99,9 +99,9 @@ def test_verified_crypto_payment_grants_lifetime_access(monkeypatch):
 
     assert locked.status_code == 403
     assert billing.status_code == 200
-    assert billing.json()["price_minor_units"] == 125
+    assert billing.json()["price_minor_units"] == 100
     assert billing.json()["currency"] == "USD"
-    assert billing.json()["display_price"] == "99 ₽"
+    assert billing.json()["display_price"] == "from 1 USDT"
     assert billing.json()["checkout_available"] is True
     assert billing.json()["has_analytics_access"] is False
 
@@ -116,6 +116,7 @@ def test_verified_crypto_payment_grants_lifetime_access(monkeypatch):
     checkout = client.post(
         "/billing/analytics-lifetime/checkout",
         headers=headers,
+        json={"amount_usdt": "1.50"},
     )
 
     assert checkout.status_code == 200
@@ -151,6 +152,62 @@ def test_verified_crypto_payment_grants_lifetime_access(monkeypatch):
     app.dependency_overrides.clear()
 
 
+def test_billing_accepts_custom_usdt_amount_from_one(monkeypatch):
+    configure_nowpayments(monkeypatch)
+    client = build_client()
+    headers = register(client)
+    captured_amounts: list[int] = []
+
+    def create_invoice(self, payment, user):
+        del self, user
+        captured_amounts.append(payment.amount_minor_units)
+
+        return {
+            "id": f"invoice-{payment.amount_minor_units}",
+            "invoice_url": (
+                "https://nowpayments.test/"
+                f"invoice-{payment.amount_minor_units}"
+            ),
+        }
+
+    monkeypatch.setattr(
+        NowPaymentsClient,
+        "create_invoice",
+        create_invoice,
+    )
+
+    billing_ru = client.get("/billing/me?language=ru", headers=headers)
+    billing_en = client.get("/billing/me?language=en", headers=headers)
+    first_checkout = client.post(
+        "/billing/analytics-lifetime/checkout",
+        headers=headers,
+        json={"amount_usdt": "1.00"},
+    )
+    second_checkout = client.post(
+        "/billing/analytics-lifetime/checkout",
+        headers=headers,
+        json={"amount_usdt": "3.75"},
+    )
+    below_minimum = client.post(
+        "/billing/analytics-lifetime/checkout",
+        headers=headers,
+        json={"amount_usdt": "0.99"},
+    )
+
+    assert billing_ru.status_code == 200
+    assert billing_en.status_code == 200
+    assert billing_ru.json()["price_minor_units"] == 100
+    assert billing_en.json()["price_minor_units"] == 100
+    assert billing_ru.json()["display_price"] == "from 1 USDT"
+    assert billing_en.json()["display_price"] == "from 1 USDT"
+    assert first_checkout.status_code == 200
+    assert second_checkout.status_code == 200
+    assert below_minimum.status_code == 422
+    assert captured_amounts == [100, 375]
+
+    app.dependency_overrides.clear()
+
+
 def test_payment_with_wrong_amount_never_grants_access(monkeypatch):
     configure_nowpayments(monkeypatch)
     client = build_client()
@@ -166,11 +223,13 @@ def test_payment_with_wrong_amount_never_grants_access(monkeypatch):
     checkout = client.post(
         "/billing/analytics-lifetime/checkout",
         headers=headers,
+        json={"amount_usdt": "2.00"},
     )
     signed_payload = payment_payload(
         payment_id="crypto-payment-2",
         invoice_id="invoice-2",
         order_id=checkout.json()["payment_id"],
+        amount="2.00",
     )
     provider_payload = dict(signed_payload, price_amount="1.00")
     monkeypatch.setattr(

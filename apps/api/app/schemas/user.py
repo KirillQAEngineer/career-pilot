@@ -69,3 +69,7 @@ class AdminUserDetail(UserResponse):
 
 class AdminRoleUpdate(BaseModel):
     is_admin: bool
+
+
+class AdminAnalyticsAccessUpdate(BaseModel):
+    analytics_lifetime_access: bool

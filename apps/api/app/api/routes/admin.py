@@ -10,6 +10,7 @@ from app.db.repositories.resume_profile_repository import (
 from app.db.repositories.user_repository import UserRepository
 from app.db.session import get_db
 from app.schemas.user import (
+    AdminAnalyticsAccessUpdate,
     AdminRoleUpdate,
     AdminStatsResponse,
     AdminUserDetail,
@@ -87,3 +88,25 @@ def update_admin_role(
         raise HTTPException(400, "You cannot remove your own administrator role")
 
     return repository.update_admin_role(user, data.is_admin)
+
+
+@router.patch(
+    "/users/{user_id}/analytics-access",
+    response_model=UserResponse,
+)
+def update_analytics_access(
+    user_id: UUID,
+    data: AdminAnalyticsAccessUpdate,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    repository = UserRepository(db)
+    user = repository.get_by_public_id(user_id)
+
+    if user is None:
+        raise HTTPException(404, "User not found")
+
+    return repository.update_analytics_lifetime_access(
+        user,
+        data.analytics_lifetime_access,
+    )

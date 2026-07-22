@@ -24,9 +24,9 @@ class BillingStatus {
       hasAnalyticsAccess: json['has_analytics_access'] as bool? ?? false,
       checkoutAvailable: json['checkout_available'] as bool? ?? false,
       emailVerified: json['email_verified'] as bool? ?? false,
-      priceMinorUnits: json['price_minor_units'] as int? ?? 125,
+      priceMinorUnits: json['price_minor_units'] as int? ?? 100,
       currency: json['currency']?.toString() ?? 'USD',
-      displayPrice: json['display_price']?.toString() ?? '99 ₽',
+      displayPrice: json['display_price']?.toString() ?? 'from 1 USDT',
       latestPaymentStatus: json['latest_payment_status']?.toString(),
     );
   }

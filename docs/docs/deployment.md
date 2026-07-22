@@ -123,9 +123,9 @@ PUBLIC_API_BASE_URL=https://jobcompass-api.onrender.com
 FRONTEND_BASE_URL=https://kirillqaengineer.github.io/JobCompass
 EMAIL_DELIVERY_PROVIDER=brevo
 EMAIL_FROM_NAME=JobCompass
-ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=125
+ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=100
 ANALYTICS_LIFETIME_PRICE_CURRENCY=USD
-ANALYTICS_LIFETIME_DISPLAY_PRICE=99 ₽
+ANALYTICS_LIFETIME_DISPLAY_PRICE=from 1 USDT
 ```
 
 Секреты вводятся только в Render Environment. Их нельзя отправлять в чат,
@@ -169,12 +169,14 @@ IPN callback формируется автоматически:
 `https://jobcompass-api.onrender.com/billing/nowpayments/ipn`.
 
 6. Выполнить deploy, войти подтверждённым аккаунтом и создать счёт из раздела
-   Аналитика. После оплаты дождаться финального статуса и нажать проверку.
+   Аналитика. После оплаты доступ активируется автоматически через IPN webhook;
+   открытый экран также синхронизирует статус в фоне.
 7. Проверить повторный вход: бессрочное право должно сохраниться в PostgreSQL.
 
-Цена в интерфейсе отображается как 99 ₽, а реальная сумма счёта по умолчанию
-равна 1.25 USD. Пользователю показывается отдельная инструкция использовать
-USDT в сети Tron (TRC20). Значение счёта можно менять в Render через
+Во всех языках пользователь может выбрать любую сумму от 1 USDT. Hosted invoice
+NOWPayments принимает её как эквивалент в USD и рассчитывает итоговый
+`pay_amount` в USDT TRC20; он может немного отличаться из-за курса и сетевой
+комиссии. Нижний предел задаётся через
 `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS` без изменения кода.
 
 Backend не получает seed-фразу или приватные ключи кошелька. Подписанный IPN
