@@ -13,9 +13,15 @@ class FakeJobsApi extends JobsApi {
   final Object? refreshError;
 
   int refreshCalls = 0;
+  final List<String> queries = [];
 
   @override
-  Future<List<Job>> fetchJobs({required bool forceRefresh}) async {
+  Future<List<Job>> fetchJobs({
+    required bool forceRefresh,
+    String query = '',
+  }) async {
+    queries.add(query);
+
     if (!forceRefresh) {
       return initialJobs;
     }
@@ -62,5 +68,18 @@ void main() {
     expect(refreshed, isFalse);
     expect(api.refreshCalls, 1);
     expect(container.read(jobsProvider).requireValue, [job]);
+  });
+
+  test('search sends the user query to the backend', () async {
+    final api = FakeJobsApi(initialJobs: [job]);
+    final container = ProviderContainer(
+      overrides: [jobsApiProvider.overrideWithValue(api)],
+    );
+
+    addTearDown(container.dispose);
+    await container.read(jobsProvider.future);
+    await container.read(jobsProvider.notifier).search('Senior QA');
+
+    expect(api.queries, ['', 'Senior QA']);
   });
 }

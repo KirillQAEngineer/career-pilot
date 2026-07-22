@@ -105,12 +105,84 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
    - `ADZUNA_APP_ID`
    - `ADZUNA_APP_KEY`
    - `JOOBLE_API_KEY`
+   - `BREVO_API_KEY`
+   - `EMAIL_FROM_ADDRESS`
+   - `NOWPAYMENTS_API_KEY`
+   - `NOWPAYMENTS_IPN_SECRET`
 7. Запустить deploy.
 8. Проверить публичный endpoint:
 
 ```bash
 curl https://jobcompass-api.onrender.com/
 ```
+
+Для ссылок из писем и возврата после оплаты также должны быть заданы:
+
+```text
+PUBLIC_API_BASE_URL=https://jobcompass-api.onrender.com
+FRONTEND_BASE_URL=https://kirillqaengineer.github.io/JobCompass
+EMAIL_DELIVERY_PROVIDER=brevo
+EMAIL_FROM_NAME=JobCompass
+ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=125
+ANALYTICS_LIFETIME_PRICE_CURRENCY=USD
+ANALYTICS_LIFETIME_DISPLAY_PRICE=99 ₽
+```
+
+Секреты вводятся только в Render Environment. Их нельзя отправлять в чат,
+добавлять в `.env.example`, workflow или коммитить в Git.
+
+## Подтверждение почты через Brevo
+
+1. Создать аккаунт Brevo и подтвердить отправителя в разделе Senders.
+2. Создать API key для transactional email.
+3. В Render записать ключ в `BREVO_API_KEY`, а подтверждённый адрес — в
+   `EMAIL_FROM_ADDRESS`.
+4. Выполнить deploy и зарегистрировать тестового пользователя.
+5. Проверить получение письма, переход по ссылке и вход после подтверждения.
+
+Новые аккаунты не получают JWT до подтверждения почты. Пользователи, созданные
+до миграции, сохраняют возможность входа и могут подтвердить адрес из Профиля.
+
+## Оплата Аналитики криптовалютой через NOWPayments
+
+1. Зарегистрировать individual-аккаунт NOWPayments по email.
+2. В кабинете добавить payout wallet для валюты, в которой нужно получать
+   выплаты. Адрес кошелька хранится у провайдера, а не в JobCompass.
+3. Создать API key и IPN secret.
+4. В Render Environment добавить только серверные секреты:
+
+```text
+NOWPAYMENTS_API_KEY=...
+NOWPAYMENTS_IPN_SECRET=...
+```
+
+5. Проверить публичные адреса, которые backend передаёт при создании счёта:
+
+```text
+PUBLIC_API_BASE_URL=https://jobcompass-api.onrender.com
+FRONTEND_BASE_URL=https://kirillqaengineer.github.io/JobCompass
+```
+
+IPN callback формируется автоматически:
+`https://jobcompass-api.onrender.com/billing/nowpayments/ipn`.
+
+6. Выполнить deploy, войти подтверждённым аккаунтом и создать счёт из раздела
+   Аналитика. После оплаты дождаться финального статуса и нажать проверку.
+7. Проверить повторный вход: бессрочное право должно сохраниться в PostgreSQL.
+
+Цена в интерфейсе отображается как 99 ₽, а реальная сумма счёта по умолчанию
+равна 1.25 USD и оплачивается выбранной криптовалютой. Значение можно менять в
+Render через `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS` без изменения кода.
+
+Backend не получает seed-фразу или приватные ключи кошелька. Подписанный IPN
+сам по себе не выдаёт доступ: JobCompass повторно запрашивает транзакцию у
+NOWPayments и проверяет invoice ID, payment ID, order ID, валюту, точную сумму и
+финальный статус `finished`. Запросы с неверной подписью отклоняются.
+
+Обычная individual-регистрация не равна гарантии полного отсутствия проверок:
+провайдер оставляет за собой право запросить KYC/AML-проверку подозрительной
+транзакции. Если нужен полностью автономный приём без посредника, отдельным
+этапом следует разворачивать self-hosted BTCPay Server.
 
 ## PostgreSQL deploy через Supabase
 

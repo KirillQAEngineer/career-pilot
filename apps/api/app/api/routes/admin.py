@@ -62,6 +62,9 @@ def admin_user_detail(
         email=user.email,
         full_name=user.full_name,
         is_admin=user.is_admin,
+        email_verified_at=user.email_verified_at,
+        email_verification_required=user.email_verification_required,
+        analytics_lifetime_access=user.analytics_lifetime_access,
         created_at=user.created_at,
         profile=profile,
     )

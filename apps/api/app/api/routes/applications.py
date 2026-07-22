@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_analytics_access
 from app.db.models.user import User
 from app.db.repositories.application_repository import (
     ApplicationRepository,
@@ -28,7 +28,7 @@ router = APIRouter(
 )
 def create_application(
     request: ApplicationCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -44,7 +44,7 @@ def create_application(
     response_model=list[ApplicationResponse],
 )
 def get_applications(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -59,7 +59,7 @@ def get_applications(
     response_model=list[ApplicationResponse],
 )
 def get_archived_applications(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -81,7 +81,7 @@ def get_archived_applications(
     response_model=ApplicationStatsResponse,
 )
 def get_application_stats(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -97,7 +97,7 @@ def get_application_stats(
 )
 def update_application_analytics(
     request: ApplicationAnalyticsUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -117,7 +117,7 @@ def update_application_analytics(
 def update_application_status(
     application_id: int,
     request: ApplicationStatusUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -143,7 +143,7 @@ def update_application_status(
 )
 def archive_application(
     application_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)
@@ -168,7 +168,7 @@ def archive_application(
 )
 def unarchive_application(
     application_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_analytics_access),
     db: Session = Depends(get_db),
 ):
     repository = ApplicationRepository(db)

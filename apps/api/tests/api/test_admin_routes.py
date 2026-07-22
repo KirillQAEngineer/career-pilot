@@ -35,13 +35,18 @@ def build_client():
 
 
 def register(client: TestClient, email: str) -> str:
-    response = client.post(
+    client.post(
         "/auth/register",
         json={
             "email": email,
             "password": "strong-password",
             "full_name": email.split("@", 1)[0],
         },
+    )
+
+    response = client.post(
+        "/auth/login",
+        data={"username": email, "password": "strong-password"},
     )
 
     return response.json()["access_token"]
@@ -132,5 +137,8 @@ def test_current_account_returns_database_identity_and_role():
     assert UUID(response.json()["id"])
     assert response.json()["email"] == "account@example.com"
     assert response.json()["is_admin"] is False
+    assert response.json()["email_verified_at"] is not None
+    assert response.json()["email_verification_required"] is False
+    assert response.json()["analytics_lifetime_access"] is False
 
     app.dependency_overrides.clear()

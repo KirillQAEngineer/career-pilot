@@ -6,6 +6,8 @@ import '../core/localization/app_localizations.dart';
 import '../features/admin/screens/admin_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/applications/screens/application_history_screen.dart';
+import '../features/billing/screens/analytics_paywall_screen.dart';
+import '../features/billing/widgets/analytics_promo_banner.dart';
 import '../features/feed/screens/feed_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
@@ -84,7 +86,11 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     });
   }
 
-  Widget _buildCurrentScreen(int index, {required bool isAdmin}) {
+  Widget _buildCurrentScreen(
+    int index, {
+    required bool isAdmin,
+    required bool hasAnalyticsAccess,
+  }) {
     switch (index) {
       case 0:
         return HomeScreen(
@@ -97,7 +103,9 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       case 2:
         return const SavedScreen();
       case 3:
-        return const ApplicationHistoryScreen();
+        return hasAnalyticsAccess
+            ? const ApplicationHistoryScreen()
+            : const AnalyticsPaywallScreen();
       case 4:
         return const ProfileScreen();
       case 5:
@@ -113,10 +121,23 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = ref.watch(currentUserProvider).value?.isAdmin ?? false;
+    final account = ref.watch(currentUserProvider).value;
+    final isAdmin = account?.isAdmin ?? false;
+    final hasAnalyticsAccess = account?.hasAnalyticsAccess ?? false;
     final destinationCount = isAdmin ? 6 : 5;
     final effectiveIndex = selectedIndex < destinationCount ? selectedIndex : 4;
-    final currentScreen = _buildCurrentScreen(effectiveIndex, isAdmin: isAdmin);
+    final currentScreen = _buildCurrentScreen(
+      effectiveIndex,
+      isAdmin: isAdmin,
+      hasAnalyticsAccess: hasAnalyticsAccess,
+    );
+    final content = Column(
+      children: [
+        if (!hasAnalyticsAccess && effectiveIndex != 3)
+          AnalyticsPromoBanner(onOpen: () => _selectTab(3)),
+        Expanded(child: currentScreen),
+      ],
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -138,14 +159,14 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
                   ),
                 ),
                 const VerticalDivider(width: 1),
-                Expanded(child: currentScreen),
+                Expanded(child: content),
               ],
             ),
           );
         }
 
         return Scaffold(
-          body: currentScreen,
+          body: content,
           bottomNavigationBar: NavigationBar(
             height: 68,
             labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,

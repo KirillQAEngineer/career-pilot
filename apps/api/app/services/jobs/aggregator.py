@@ -32,8 +32,8 @@ from app.services.jobs.metadata_normalizer import JobMetadataNormalizer
 
 
 class JobsAggregator:
-    CACHE_TTL_SECONDS = 600
-    SEARCH_TIMEOUT_SECONDS = 7.0
+    CACHE_TTL_SECONDS = 1800
+    SEARCH_TIMEOUT_SECONDS = 8.0
     MAX_WORKERS = 16
 
     def __init__(self):
@@ -190,6 +190,7 @@ class JobsAggregator:
             key = (
                 job.title.strip().lower(),
                 job.company.strip().lower(),
+                job.location.strip().lower(),
             )
 
             if key not in unique:

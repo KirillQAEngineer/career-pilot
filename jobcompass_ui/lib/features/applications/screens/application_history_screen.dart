@@ -879,7 +879,7 @@ class _ApplicationCard extends StatelessWidget {
                       ),
                     )
                   else
-                    _buildStatusMenu(context),
+                    _buildStatusMenu(context, compactLayout: compactLayout),
                   IconButton(
                     tooltip: context.tr('open_vacancy'),
                     padding: EdgeInsets.zero,
@@ -911,7 +911,7 @@ class _ApplicationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusMenu(BuildContext context) {
+  Widget _buildStatusMenu(BuildContext context, {required bool compactLayout}) {
     final statusLabel = applicationStatusLabel(application.status, context);
 
     return PopupMenuButton<String>(
@@ -933,19 +933,22 @@ class _ApplicationCard extends StatelessWidget {
         label: statusLabel,
         button: true,
         child: SizedBox(
-          width: 132,
+          width: compactLayout ? 112 : 156,
           height: 36,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Expanded(
-                child: Text(
-                  key: ValueKey('application-status-label-${application.id}'),
-                  statusLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: Theme.of(context).textTheme.bodySmall,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    key: ValueKey('application-status-label-${application.id}'),
+                    statusLabel,
+                    maxLines: 1,
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               ),
               const SizedBox(width: 2),

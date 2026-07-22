@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../models/profile.dart';
+import '../../../providers/account_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/resume_upload_provider.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -65,41 +67,75 @@ class ProfileScreen extends ConsumerWidget {
           );
         },
         data: (profile) {
+          final account = ref.watch(currentUserProvider).value;
+          final showVerificationBanner =
+              account != null && !account.emailVerified;
+
+          Future<void> sendVerification() async {
+            final sent = await ref
+                .read(authProvider.notifier)
+                .sendCurrentUserVerification();
+
+            if (!context.mounted) {
+              return;
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  context.tr(
+                    sent ? 'verification_sent' : 'failed_send_verification',
+                  ),
+                ),
+              ),
+            );
+          }
+
           if (profile == null) {
-            return _EmptyProfileState(
-              isUploading: isUploading,
-              onCreateManually: () async {
-                await _openProfileEditor(context, ref, Profile.empty());
-              },
-              onUpload: () async {
-                final uploaded = await ref
-                    .read(resumeUploadProvider.notifier)
-                    .pickAndUploadResume();
+            return Column(
+              children: [
+                if (showVerificationBanner)
+                  _EmailVerificationBanner(onSend: sendVerification),
+                Expanded(
+                  child: _EmptyProfileState(
+                    isUploading: isUploading,
+                    onCreateManually: () async {
+                      await _openProfileEditor(context, ref, Profile.empty());
+                    },
+                    onUpload: () async {
+                      final uploaded = await ref
+                          .read(resumeUploadProvider.notifier)
+                          .pickAndUploadResume();
 
-                if (!context.mounted) {
-                  return;
-                }
+                      if (!context.mounted) {
+                        return;
+                      }
 
-                if (uploaded) {
-                  ref.invalidate(profileProvider);
+                      if (uploaded) {
+                        ref.invalidate(profileProvider);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.tr('resume_created'))),
-                  );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(context.tr('resume_created'))),
+                        );
 
-                  return;
-                }
+                        return;
+                      }
 
-                final state = ref.read(resumeUploadProvider);
+                      final state = ref.read(resumeUploadProvider);
 
-                if (state.hasError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_uploadErrorMessage(context, state.error)),
-                    ),
-                  );
-                }
-              },
+                      if (state.hasError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              _uploadErrorMessage(context, state.error),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             );
           }
 
@@ -114,6 +150,8 @@ class ProfileScreen extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(10),
               children: [
+                if (showVerificationBanner)
+                  _EmailVerificationBanner(onSend: sendVerification),
                 CircleAvatar(
                   radius: 32,
                   child: Text(
@@ -438,6 +476,30 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     return context.tr('failed_upload');
+  }
+}
+
+class _EmailVerificationBanner extends StatelessWidget {
+  const _EmailVerificationBanner({required this.onSend});
+
+  final Future<void> Function() onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      color: Theme.of(context).colorScheme.tertiaryContainer,
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.mark_email_unread_outlined),
+        title: Text(context.tr('verify_email_prompt_title')),
+        subtitle: Text(context.tr('verify_email_prompt_body')),
+        trailing: TextButton(
+          onPressed: onSend,
+          child: Text(context.tr('verify_email')),
+        ),
+      ),
+    );
   }
 }
 

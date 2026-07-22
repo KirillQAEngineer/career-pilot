@@ -9,28 +9,41 @@ class AuthState {
   final bool isAuthenticated;
   final bool isLoading;
   final String? error;
+  final String? notice;
+  final String? verificationEmail;
 
   const AuthState({
     required this.isAuthenticated,
     required this.isLoading,
     this.error,
+    this.notice,
+    this.verificationEmail,
   });
 
   const AuthState.initial()
     : isAuthenticated = false,
       isLoading = true,
-      error = null;
+      error = null,
+      notice = null,
+      verificationEmail = null;
 
   AuthState copyWith({
     bool? isAuthenticated,
     bool? isLoading,
     String? error,
+    String? notice,
+    String? verificationEmail,
     bool clearError = false,
+    bool clearNotice = false,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : error ?? this.error,
+      notice: clearNotice ? null : notice ?? this.notice,
+      verificationEmail: clearNotice
+          ? null
+          : verificationEmail ?? this.verificationEmail,
     );
   }
 }
@@ -101,7 +114,11 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<bool> login({required String email, required String password}) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearNotice: true,
+    );
 
     try {
       final response = await ApiClient.dio.post(
@@ -138,6 +155,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
       if (error.response?.statusCode == 401) {
         message = 'Invalid email or password';
+      } else if (error.response?.statusCode == 403) {
+        message = 'email_verification_required';
       } else if (error.response?.data is Map) {
         final detail = error.response?.data['detail'];
 
@@ -150,6 +169,9 @@ class AuthNotifier extends Notifier<AuthState> {
         isAuthenticated: false,
         isLoading: false,
         error: message,
+        verificationEmail: error.response?.statusCode == 403
+            ? email.trim().toLowerCase()
+            : null,
       );
 
       return false;
@@ -171,7 +193,11 @@ class AuthNotifier extends Notifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearNotice: true,
+    );
 
     try {
       final response = await ApiClient.dio.post(
@@ -183,25 +209,17 @@ class AuthNotifier extends Notifier<AuthState> {
         },
       );
 
-      final data = response.data;
-
-      if (data is! Map) {
+      if (response.data is! Map) {
         throw Exception('Invalid registration response');
       }
 
-      final token = data['access_token']?.toString();
-
-      if (token == null || token.isEmpty) {
-        throw Exception('Access token is missing');
-      }
-
-      ApiClient.setToken(token);
-      ref.invalidate(currentUserProvider);
-
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setString(_tokenKey, token);
-
-      state = const AuthState(isAuthenticated: true, isLoading: false);
+      final normalizedEmail = email.trim().toLowerCase();
+      state = AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        notice: 'registration_check_email',
+        verificationEmail: normalizedEmail,
+      );
 
       return true;
     } on DioException catch (error) {
@@ -239,12 +257,62 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> resendVerification(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
+
+    if (normalizedEmail.isEmpty) {
+      state = state.copyWith(error: 'enter_email', clearNotice: true);
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await ApiClient.dio.post(
+        '/auth/resend-verification',
+        data: {'email': normalizedEmail},
+      );
+      state = AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        notice: 'verification_sent',
+        verificationEmail: normalizedEmail,
+      );
+      return true;
+    } on DioException catch (error) {
+      final detail = error.response?.data is Map
+          ? error.response?.data['detail']?.toString()
+          : null;
+      state = AuthState(
+        isAuthenticated: false,
+        isLoading: false,
+        error: detail ?? 'failed_send_verification',
+        verificationEmail: normalizedEmail,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> sendCurrentUserVerification() async {
+    try {
+      await ApiClient.dio.post('/auth/me/send-verification');
+      ref.invalidate(currentUserProvider);
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _clearSession();
   }
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  void clearMessages() {
+    state = state.copyWith(clearError: true, clearNotice: true);
   }
 }
 

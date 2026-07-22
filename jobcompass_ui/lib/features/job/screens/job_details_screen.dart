@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/utils/url_launcher_utils.dart';
+import '../../../features/billing/screens/analytics_paywall_screen.dart';
 import '../../../models/application.dart';
 import '../../../models/job.dart';
 import '../../../providers/application_provider.dart';
+import '../../../providers/account_provider.dart';
 import '../../../providers/job_details_provider.dart';
 import '../widgets/job_comment_section.dart';
 
@@ -169,6 +171,20 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
 
     if (decision == _JobDecision.yes) {
       if (existingApplication == null) {
+        final hasAnalyticsAccess =
+            ref.read(currentUserProvider).value?.hasAnalyticsAccess ?? false;
+
+        if (!hasAnalyticsAccess) {
+          setState(() {
+            _isSubmittingDecision = false;
+          });
+          await Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const AnalyticsPaywallScreen()),
+          );
+          return;
+        }
+
         success = await ref
             .read(applicationProvider.notifier)
             .apply(widget.job);
@@ -204,7 +220,11 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final applicationsAsync = ref.watch(applicationProvider);
+    final hasAnalyticsAccess =
+        ref.watch(currentUserProvider).value?.hasAnalyticsAccess ?? false;
+    final applicationsAsync = hasAnalyticsAccess
+        ? ref.watch(applicationProvider)
+        : const AsyncData<List<Application>>([]);
     final matchAsync = widget.job.score > 0
         ? AsyncValue.data(widget.job.score.round().clamp(0, 100))
         : ref.watch(jobMatchProvider(widget.job));

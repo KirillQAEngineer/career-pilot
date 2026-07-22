@@ -34,13 +34,18 @@ def build_client():
 
 
 def register(client: TestClient) -> dict[str, str]:
-    response = client.post(
+    client.post(
         "/auth/register",
         json={
             "email": "profile@example.com",
             "password": "strong-password",
             "full_name": "Profile User",
         },
+    )
+
+    response = client.post(
+        "/auth/login",
+        data={"username": "profile@example.com", "password": "strong-password"},
     )
 
     return {"Authorization": f"Bearer {response.json()['access_token']}"}

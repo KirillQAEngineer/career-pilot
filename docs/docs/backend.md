@@ -76,6 +76,15 @@ docker compose exec api alembic revision -m "describe_change"
 - `ADZUNA_APP_ID` и `ADZUNA_APP_KEY` - ключи Adzuna.
 - `JOOBLE_API_KEY` - ключ Jooble.
 - `GEMINI_API_KEY` - ключ Gemini.
+- `PUBLIC_API_BASE_URL` - публичная база URL backend для ссылок подтверждения.
+- `FRONTEND_BASE_URL` - адрес Flutter Web для возврата после подтверждения и оплаты.
+- `EMAIL_DELIVERY_PROVIDER=brevo`, `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS` -
+  отправка transactional email.
+- `NOWPAYMENTS_API_KEY` - серверный API key для создания криптосчетов.
+- `NOWPAYMENTS_IPN_SECRET` - секрет проверки подписанных уведомлений об оплате.
+- `ANALYTICS_LIFETIME_PRICE_MINOR_UNITS=125` и
+  `ANALYTICS_LIFETIME_PRICE_CURRENCY=USD` - реальная сумма счёта: 1.25 USD.
+- `ANALYTICS_LIFETIME_DISPLAY_PRICE=99 ₽` - рекламное отображение цены в UI.
 - AI provider keys - ключи используемых AI-провайдеров.
 
 ## Публичный запуск
@@ -108,6 +117,35 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 - `/admin/*` доступен только пользователям с `is_admin = true`; проверка выполняется на backend, а не только скрытием вкладки в UI.
 - `GET /admin/stats` и `GET /admin/users` возвращают общую статистику и список аккаунтов.
 - `GET /admin/users/{id}` возвращает карточку пользователя, а `PATCH /admin/users/{id}/role` меняет его роль.
+
+## Подтверждение email
+
+- `POST /auth/register` создаёт неподтверждённый аккаунт и отправляет письмо,
+  но не выдаёт access token.
+- `GET /auth/verify-email?token=...` принимает одноразовый ограниченный по
+  времени токен. В БД хранится только SHA-256 hash токена.
+- `POST /auth/resend-verification` не раскрывает существование аккаунта.
+- `POST /auth/me/send-verification` позволяет старому авторизованному
+  пользователю подтвердить адрес из Профиля.
+
+## Платный доступ к Аналитике
+
+- `GET /billing/me` возвращает право доступа и состояние последнего платежа.
+- `POST /billing/analytics-lifetime/checkout` создаёт криптосчёт NOWPayments.
+- `POST /billing/analytics-lifetime/refresh` безопасно перепроверяет платёж.
+- `POST /billing/nowpayments/ipn` принимает уведомление, проверяет его
+  HMAC-SHA512 подпись, а затем независимо читает платёж из API провайдера.
+- Доступ выдаётся только после статуса `finished`, совпадения invoice ID,
+  payment ID, order ID, валюты и точной суммы.
+- Все `/applications/*` дополнительно защищены серверной проверкой бессрочного
+  права. Администраторы имеют доступ без покупки.
+
+## Кэш вакансий
+
+Adzuna и Jooble читаются постранично, запросы к независимым источникам идут
+параллельно с ограниченным таймаутом. Уникальные вакансии сохраняются в таблицу
+`cached_jobs` на 14 дней. Это позволяет быстро отдать ранее найденные результаты,
+если внешний источник временно недоступен, не создавая искусственных дублей.
 
 Администратор не может снять права со своего текущего аккаунта. Это защищает платформу от случайной потери последнего доступного административного сеанса.
 

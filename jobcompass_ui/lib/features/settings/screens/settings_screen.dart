@@ -79,7 +79,20 @@ class SettingsScreen extends ConsumerWidget {
                     dense: true,
                     leading: const Icon(Icons.email_outlined),
                     title: Text(strings.tr('login')),
-                    subtitle: SelectableText(user.email),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SelectableText(user.email),
+                        Text(
+                          strings.tr(
+                            user.emailVerified
+                                ? 'email_verified'
+                                : 'email_not_verified',
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(

@@ -57,3 +57,14 @@ def require_admin(
         raise HTTPException(403, "Administrator access required")
 
     return current_user
+
+
+def require_analytics_access(
+    current_user=Depends(get_current_user),
+):
+    if not (
+        current_user.is_admin or current_user.analytics_lifetime_access
+    ):
+        raise HTTPException(403, "Analytics lifetime access required")
+
+    return current_user

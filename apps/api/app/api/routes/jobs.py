@@ -1,10 +1,14 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
 from app.core.rate_limit import api_rate_limiter
 from app.db.models.user import User
 from app.db.repositories.job_comment_repository import JobCommentRepository
+from app.db.repositories.cached_job_repository import CachedJobRepository
 from app.db.repositories.job_interaction_repository import (
     JobInteractionRepository,
     build_job_identity,
@@ -22,6 +26,7 @@ from app.schemas.job_comment import JobCommentResponse, JobCommentUpsert
 from app.schemas.job_cover_letter_response import JobCoverLetterResponse
 from app.schemas.job_description_response import JobDescriptionResponse
 from app.schemas.job_match import JobMatch
+from app.schemas.job import Job
 from app.schemas.job_match_request import JobMatchRequest
 from app.schemas.job_requirements import JobRequirementsResponse
 from app.schemas.job_resume_response import JobResumeResponse
@@ -42,6 +47,8 @@ router = APIRouter(
     prefix="/jobs",
     tags=["Jobs"],
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _limit_expensive_operation(
@@ -202,7 +209,8 @@ def job_resume(
 
 @router.get("/search")
 def search_jobs(
-    limit: int = Query(default=150, ge=1, le=150),
+    limit: int = Query(default=250, ge=1, le=300),
+    query: str | None = Query(default=None, max_length=120),
     refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -225,10 +233,12 @@ def search_jobs(
         )
 
     provider = get_jobs_provider()
+    effective_query = _effective_query(query, profile.profession)
     jobs = provider.search(
-        profile.profession,
+        effective_query,
         force_refresh=refresh,
     )
+    jobs = _merge_with_persistent_cache(db, effective_query, jobs)
 
     score_service = JobScoreService()
 
@@ -236,7 +246,7 @@ def search_jobs(
 
     for job in jobs:
         score = score_service.score(
-            profile.resume_text,
+            _profile_scoring_text(profile),
             job,
         )
 
@@ -263,11 +273,20 @@ def search_jobs(
 
 @router.get("/feed")
 def jobs_feed(
-    limit: int = Query(default=150, ge=1, le=150),
+    limit: int = Query(default=250, ge=1, le=300),
+    query: str | None = Query(default=None, max_length=120),
     refresh: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if query and query.strip():
+        _limit_expensive_operation(
+            current_user,
+            "query",
+            limit=10,
+            window_seconds=60,
+        )
+
     if refresh:
         _limit_expensive_operation(
             current_user,
@@ -300,10 +319,12 @@ def jobs_feed(
     )
 
     provider = get_jobs_provider()
+    effective_query = _effective_query(query, profile.profession)
     jobs = provider.search(
-        profile.profession,
+        effective_query,
         force_refresh=refresh,
     )
+    jobs = _merge_with_persistent_cache(db, effective_query, jobs)
 
     scorer = JobScoreService()
 
@@ -330,7 +351,7 @@ def jobs_feed(
             continue
 
         score = scorer.score(
-            profile.resume_text,
+            _profile_scoring_text(profile),
             job,
         )
 
@@ -353,6 +374,77 @@ def jobs_feed(
     )
 
     return feed[:limit]
+
+
+def _effective_query(query: str | None, profession: str) -> str:
+    normalized = " ".join((query or "").strip().split())
+    normalized_profession = " ".join(profession.strip().split())
+
+    if not normalized:
+        return normalized_profession
+
+    if (
+        normalized_profession
+        and normalized_profession.casefold() not in normalized.casefold()
+    ):
+        return f"{normalized_profession} {normalized}"
+
+    return normalized
+
+
+def _profile_scoring_text(profile) -> str:
+    values = [
+        profile.resume_text,
+        profile.profession,
+        profile.level,
+        profile.skills,
+        profile.technologies,
+        profile.preferred_roles,
+    ]
+
+    return " ".join(value for value in values if value)
+
+
+def _merge_with_persistent_cache(
+    db: Session,
+    query: str,
+    fresh_jobs: list[Job],
+) -> list[Job]:
+    repository = CachedJobRepository(db)
+
+    try:
+        if fresh_jobs:
+            repository.store(query, fresh_jobs)
+
+        cached_jobs = repository.get_recent(query)
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Persistent job cache is unavailable")
+        cached_jobs = []
+
+    merged: dict[str, Job] = {}
+
+    for job in [*fresh_jobs, *cached_jobs]:
+        normalized_url = normalize_job_url(job.url)
+        identity = normalized_url
+
+        if not identity and job.source.strip() and job.external_id.strip():
+            identity = (
+                f"{job.source.strip().casefold()}::{job.external_id.strip()}"
+            )
+
+        if not identity:
+            identity = "::".join(
+                [
+                    job.title.strip().casefold(),
+                    job.company.strip().casefold(),
+                    job.location.strip().casefold(),
+                ]
+            )
+
+        merged.setdefault(identity, job)
+
+    return list(merged.values())
 
 
 @router.post("/interact", response_model=JobInteractionResponse)
