@@ -1,5 +1,7 @@
 # JobCompass
 
+[![JobCompass CI/CD](https://github.com/KirillQAEngineer/JobCompass/actions/workflows/ci-cd.yml/badge.svg?branch=develop)](https://github.com/KirillQAEngineer/JobCompass/actions/workflows/ci-cd.yml)
+
 AI-платформа для автоматизации поиска работы.
 
 ## Цель
@@ -25,6 +27,8 @@ JobCompass помогает специалистам:
 - База данных: Supabase PostgreSQL.
 
 Основные инструкции находятся в `docs/docs/deployment.md`.
+
+Учебный CI/CD-контур и практика написания автотестов описаны в `docs/docs/ci-cd.md`.
 
 
 

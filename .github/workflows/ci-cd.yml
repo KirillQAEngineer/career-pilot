@@ -1,0 +1,350 @@
+name: JobCompass CI/CD
+
+run-name: CI/CD • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      deploy_pages:
+        description: Deploy GitHub Pages after successful checks (main only)
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "24"
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  backend-tests:
+    name: Backend • Migrations, API smoke, Pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jobcompass_ci
+          POSTGRES_USER: jobcompass
+          POSTGRES_PASSWORD: jobcompass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jobcompass -d jobcompass_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PYTHONPATH: apps/api
+      DATABASE_URL: postgresql+psycopg://jobcompass:jobcompass@localhost:5432/jobcompass_ci
+      DATABASE_URL_DOCKER: ""
+      SECRET_KEY: ci-only-secret-key
+      GEMINI_API_KEY: ""
+      ADZUNA_APP_ID: ""
+      ADZUNA_APP_KEY: ""
+      JOOBLE_API_KEY: ""
+
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: apps/api/requirements.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install --disable-pip-version-check -r apps/api/requirements.txt
+
+      - name: Validate installed dependencies
+        run: python -m pip check
+
+      - name: Compile backend source
+        run: python -m compileall -q apps/api/app apps/api/alembic/versions
+
+      - name: Apply all Alembic migrations to PostgreSQL
+        run: python -m alembic -c apps/api/alembic.ini upgrade head
+
+      - name: Show active database migration
+        run: python -m alembic -c apps/api/alembic.ini current
+
+      - name: Run backend autotests
+        run: |
+          mkdir -p reports
+          python -m pytest apps/api/tests \
+            --junitxml=reports/backend-junit.xml
+
+      - name: Run API smoke test against PostgreSQL
+        run: |
+          python -m uvicorn app.main:app \
+            --app-dir apps/api \
+            --host 127.0.0.1 \
+            --port 8000 \
+            > reports/api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/ > /dev/null; then
+              break
+            fi
+
+            if [ "$attempt" -eq 30 ]; then
+              cat reports/api.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          curl --fail --show-error --silent \
+            -X POST http://127.0.0.1:8000/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci.user@example.com","password":"ci-password-123","full_name":"CI User"}' \
+            > /dev/null
+
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-reports-${{ github.run_id }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 7
+
+  frontend-tests:
+    name: Frontend • Format, Analyze, Tests, Web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: jobcompass_ui
+        run: flutter pub get
+
+      - name: Check Dart formatting
+        working-directory: jobcompass_ui
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Run Flutter static analysis
+        working-directory: jobcompass_ui
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run Flutter autotests with coverage
+        working-directory: jobcompass_ui
+        run: flutter test --coverage --reporter expanded
+
+      - name: Build production Flutter Web artifact
+        working-directory: jobcompass_ui
+        run: |
+          flutter build web \
+            --release \
+            --base-href "/${GITHUB_REPOSITORY#*/}/" \
+            --dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+
+      - name: Upload Flutter coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flutter-coverage-${{ github.run_id }}
+          path: jobcompass_ui/coverage/lcov.info
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload tested web application
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-app-${{ github.run_id }}
+          path: jobcompass_ui/build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+  documentation:
+    name: Documentation • Docusaurus build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install documentation dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: Audit critical documentation dependencies
+        working-directory: docs
+        run: npm audit --audit-level=critical
+
+      - name: Build Docusaurus documentation
+        working-directory: docs
+        run: npm run build
+        env:
+          DOCS_BASE_URL: /${{ github.event.repository.name }}/docs/
+
+      - name: Upload tested documentation
+        uses: actions/upload-artifact@v7
+        with:
+          name: documentation-${{ github.run_id }}
+          path: docs/build/
+          if-no-files-found: error
+          retention-days: 7
+
+  package-api-image:
+    name: Package • Docker API image
+    needs:
+      - backend-tests
+      - frontend-tests
+      - documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build backend Docker image
+        run: |
+          docker build \
+            --file docker/api/Dockerfile \
+            --tag "jobcompass-api:ci-${GITHUB_SHA::12}" \
+            .
+
+      - name: Inspect Docker image
+        run: docker image inspect "jobcompass-api:ci-${GITHUB_SHA::12}"
+
+  ci-passed:
+    name: CI Passed
+    if: always()
+    needs:
+      - backend-tests
+      - frontend-tests
+      - documentation
+      - package-api-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify every required stage
+        env:
+          BACKEND_RESULT: ${{ needs.backend-tests.result }}
+          FRONTEND_RESULT: ${{ needs.frontend-tests.result }}
+          DOCS_RESULT: ${{ needs.documentation.result }}
+          PACKAGE_RESULT: ${{ needs.package-api-image.result }}
+        run: |
+          failed=0
+
+          for check in \
+            "Backend:$BACKEND_RESULT" \
+            "Frontend:$FRONTEND_RESULT" \
+            "Documentation:$DOCS_RESULT" \
+            "Docker:$PACKAGE_RESULT"; do
+            name="${check%%:*}"
+            result="${check#*:}"
+            printf '%-16s %s\n' "$name" "$result"
+
+            if [ "$result" != "success" ]; then
+              failed=1
+            fi
+          done
+
+          exit "$failed"
+
+  assemble-pages:
+    name: CD • Assemble GitHub Pages
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy_pages)
+    needs:
+      - frontend-tests
+      - documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download tested web application
+        uses: actions/download-artifact@v8
+        with:
+          name: web-app-${{ github.run_id }}
+          path: release/
+
+      - name: Download tested documentation
+        uses: actions/download-artifact@v8
+        with:
+          name: documentation-${{ github.run_id }}
+          path: release/docs/
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/
+
+  deploy-pages:
+    name: CD • Deploy GitHub Pages
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy_pages)
+    needs:
+      - ci-passed
+      - assemble-pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy tested artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

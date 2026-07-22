@@ -6,6 +6,7 @@ const sidebars = {
     'frontend',
     'database',
     'testing',
+    'ci-cd',
     'test-data',
     'deployment',
     'logging',
