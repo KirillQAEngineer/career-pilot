@@ -29,7 +29,7 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       body: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _LoadingHome(),
         error: (error, stackTrace) => _HomeMessage(
           icon: Icons.cloud_off_outlined,
           title: strings.tr('failed_load_profile'),
@@ -51,6 +51,29 @@ class HomeScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _LoadingHome extends StatelessWidget {
+  const _LoadingHome();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+
+    return ListView(
+      padding: const EdgeInsets.all(10),
+      children: [
+        const LinearProgressIndicator(minHeight: 2),
+        const SizedBox(height: 10),
+        _IntroCard(
+          icon: Icons.flight_takeoff_outlined,
+          title: strings.tr('platform_title'),
+          description: strings.tr('platform_description'),
+        ),
+        _HowToCard(),
+      ],
     );
   }
 }

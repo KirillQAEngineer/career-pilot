@@ -33,6 +33,7 @@ class JobCompassApp extends ConsumerWidget {
     return AppStrings(
       language: language,
       child: MaterialApp(
+        key: ValueKey(authState.isAuthenticated),
         debugShowCheckedModeBanner: false,
         title: 'JobCompass',
         theme: AppTheme.light,

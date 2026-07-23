@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 
@@ -23,6 +26,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool isRegisterMode = false;
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(ApiClient.warmUp());
+  }
 
   @override
   void dispose() {

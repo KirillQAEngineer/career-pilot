@@ -11,6 +11,7 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final strings = context.strings;
+    final navigator = Navigator.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -30,6 +31,7 @@ class SettingsScreen extends ConsumerWidget {
     );
 
     if (confirmed == true) {
+      navigator.popUntil((route) => route.isFirst);
       await ref.read(authProvider.notifier).logout();
     }
   }

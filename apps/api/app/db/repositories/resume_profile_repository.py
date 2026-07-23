@@ -5,6 +5,10 @@ from app.schemas.resume_profile import ResumeProfile as ResumeProfileSchema
 from app.schemas.resume_profile_update import ResumeProfileUpdate
 
 
+def _serialize(values: list[str]) -> str:
+    return ", ".join(values)
+
+
 class ResumeProfileRepository:
 
     def __init__(self, db: Session):
@@ -21,10 +25,10 @@ class ResumeProfileRepository:
             user_id=user_id,
             profession=profile.profession,
             level=profile.level,
-            skills=",".join(profile.skills),
-            technologies=",".join(profile.technologies),
+            skills=_serialize(profile.skills),
+            technologies=_serialize(profile.technologies),
             english_level=profile.english_level,
-            preferred_roles=",".join(profile.preferred_roles),
+            preferred_roles=_serialize(profile.preferred_roles),
             resume_text=resume_text,
         )
 
@@ -55,10 +59,10 @@ class ResumeProfileRepository:
 
         profile.profession = data.profession
         profile.level = data.level
-        profile.skills = ",".join(data.skills)
-        profile.technologies = ",".join(data.technologies)
+        profile.skills = _serialize(data.skills)
+        profile.technologies = _serialize(data.technologies)
         profile.english_level = data.english_level
-        profile.preferred_roles = ",".join(data.preferred_roles)
+        profile.preferred_roles = _serialize(data.preferred_roles)
 
         self.db.commit()
         self.db.refresh(profile)
@@ -79,10 +83,10 @@ class ResumeProfileRepository:
                 user_id=user_id,
                 profession=profile.profession,
                 level=profile.level,
-                skills=",".join(profile.skills),
-                technologies=",".join(profile.technologies),
+                skills=_serialize(profile.skills),
+                technologies=_serialize(profile.technologies),
                 english_level=profile.english_level,
-                preferred_roles=",".join(profile.preferred_roles),
+                preferred_roles=_serialize(profile.preferred_roles),
                 resume_text=resume_text,
             )
 
@@ -91,10 +95,10 @@ class ResumeProfileRepository:
         else:
             db_profile.profession = profile.profession
             db_profile.level = profile.level
-            db_profile.skills = ",".join(profile.skills)
-            db_profile.technologies = ",".join(profile.technologies)
+            db_profile.skills = _serialize(profile.skills)
+            db_profile.technologies = _serialize(profile.technologies)
             db_profile.english_level = profile.english_level
-            db_profile.preferred_roles = ",".join(profile.preferred_roles)
+            db_profile.preferred_roles = _serialize(profile.preferred_roles)
             db_profile.resume_text = resume_text
 
         self.db.commit()

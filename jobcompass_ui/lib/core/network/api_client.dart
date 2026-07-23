@@ -71,4 +71,22 @@ class ApiClient {
   static void clearToken() {
     dio.options.headers.remove('Authorization');
   }
+
+  static Future<void> warmUp() async {
+    final host = Uri.tryParse(_baseUrl)?.host;
+
+    if (host == null || host == 'localhost' || host == '127.0.0.1') {
+      return;
+    }
+
+    try {
+      await dio.get<void>(
+        '/',
+        options: Options(extra: const {'skipUnauthorizedHandler': true}),
+      );
+    } on DioException {
+      // Warming the service is only an optimization. Authentication remains
+      // fully available if the health request is unavailable.
+    }
+  }
 }

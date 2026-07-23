@@ -5,10 +5,24 @@ import '../../../models/profile.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../providers/profile_provider.dart';
 
+enum ProfileEditField {
+  profession,
+  level,
+  preferredRoles,
+  skills,
+  technologies,
+  englishLevel,
+}
+
 class EditProfileScreen extends ConsumerStatefulWidget {
   final Profile profile;
+  final ProfileEditField? initialField;
 
-  const EditProfileScreen({super.key, required this.profile});
+  const EditProfileScreen({
+    super.key,
+    required this.profile,
+    this.initialField,
+  });
 
   @override
   ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -23,6 +37,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _technologiesController;
   late final TextEditingController _englishLevelController;
   late final TextEditingController _preferredRolesController;
+  late final Map<ProfileEditField, FocusNode> _focusNodes;
 
   @override
   void initState() {
@@ -47,6 +62,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _preferredRolesController = TextEditingController(
       text: widget.profile.preferredRoles,
     );
+
+    _focusNodes = {
+      for (final field in ProfileEditField.values) field: FocusNode(),
+    };
   }
 
   @override
@@ -57,6 +76,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _technologiesController.dispose();
     _englishLevelController.dispose();
     _preferredRolesController.dispose();
+
+    for (final focusNode in _focusNodes.values) {
+      focusNode.dispose();
+    }
 
     super.dispose();
   }
@@ -144,6 +167,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           children: [
             TextFormField(
               controller: _professionController,
+              focusNode: _focusNodes[ProfileEditField.profession],
+              autofocus: widget.initialField == ProfileEditField.profession,
               enabled: !isSaving,
               decoration: InputDecoration(
                 labelText: context.tr('profession'),
@@ -160,6 +185,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _levelController,
+              focusNode: _focusNodes[ProfileEditField.level],
+              autofocus: widget.initialField == ProfileEditField.level,
               enabled: !isSaving,
               decoration: InputDecoration(
                 labelText: context.tr('level'),
@@ -172,6 +199,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _preferredRolesController,
+              focusNode: _focusNodes[ProfileEditField.preferredRoles],
+              autofocus: widget.initialField == ProfileEditField.preferredRoles,
               enabled: !isSaving,
               maxLines: 2,
               decoration: InputDecoration(
@@ -184,6 +213,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _skillsController,
+              focusNode: _focusNodes[ProfileEditField.skills],
+              autofocus: widget.initialField == ProfileEditField.skills,
               enabled: !isSaving,
               maxLines: 3,
               decoration: InputDecoration(
@@ -196,6 +227,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _technologiesController,
+              focusNode: _focusNodes[ProfileEditField.technologies],
+              autofocus: widget.initialField == ProfileEditField.technologies,
               enabled: !isSaving,
               maxLines: 3,
               decoration: InputDecoration(
@@ -208,6 +241,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _englishLevelController,
+              focusNode: _focusNodes[ProfileEditField.englishLevel],
+              autofocus: widget.initialField == ProfileEditField.englishLevel,
               enabled: !isSaving,
               decoration: InputDecoration(
                 labelText: context.tr('english_level'),

@@ -37,11 +37,23 @@ class Profile {
       id: json['id'] as int? ?? 0,
       profession: json['profession'] as String? ?? '',
       level: json['level'] as String? ?? '',
-      skills: json['skills'] as String? ?? '',
-      technologies: json['technologies'] as String? ?? '',
+      skills: _formatCommaSeparated(json['skills'] as String? ?? ''),
+      technologies: _formatCommaSeparated(
+        json['technologies'] as String? ?? '',
+      ),
       englishLevel: json['english_level'] as String? ?? '',
-      preferredRoles: json['preferred_roles'] as String? ?? '',
+      preferredRoles: _formatCommaSeparated(
+        json['preferred_roles'] as String? ?? '',
+      ),
       resumeText: json['resume_text'] as String? ?? '',
     );
+  }
+
+  static String _formatCommaSeparated(String value) {
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .join(', ');
   }
 }

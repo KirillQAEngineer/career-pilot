@@ -163,25 +163,35 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  profile.profession.isEmpty
+                _EditableHeaderField(
+                  value: profile.profession.isEmpty
                       ? context.tr('profile_not_specified')
                       : profile.profession,
-                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.profession,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  profile.level.isEmpty
+                _EditableHeaderField(
+                  value: profile.level.isEmpty
                       ? context.tr('level_not_specified')
                       : profile.level,
-                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.level,
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -190,24 +200,48 @@ class ProfileScreen extends ConsumerWidget {
                   title: context.tr('preferred_roles'),
                   value: profile.preferredRoles,
                   emptyValue: context.tr('no_preferred_roles'),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.preferredRoles,
+                  ),
                 ),
                 _ProfileSection(
                   icon: Icons.psychology_outlined,
                   title: context.tr('skills'),
                   value: profile.skills,
                   emptyValue: context.tr('no_skills'),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.skills,
+                  ),
                 ),
                 _ProfileSection(
                   icon: Icons.code,
                   title: context.tr('technologies'),
                   value: profile.technologies,
                   emptyValue: context.tr('no_technologies'),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.technologies,
+                  ),
                 ),
                 _ProfileSection(
                   icon: Icons.language,
                   title: context.tr('english_level'),
                   value: profile.englishLevel,
                   emptyValue: context.tr('no_english_level'),
+                  onTap: () => _openProfileEditor(
+                    context,
+                    ref,
+                    profile,
+                    initialField: ProfileEditField.englishLevel,
+                  ),
                 ),
                 Card(
                   child: Column(
@@ -236,17 +270,6 @@ class ProfileScreen extends ConsumerWidget {
                           spacing: 10,
                           runSpacing: 10,
                           children: [
-                            OutlinedButton.icon(
-                              onPressed: isUploading
-                                  ? null
-                                  : () => _openProfileEditor(
-                                      context,
-                                      ref,
-                                      profile,
-                                    ),
-                              icon: const Icon(Icons.edit_outlined, size: 18),
-                              label: Text(context.tr('edit_profile')),
-                            ),
                             FilledButton.tonalIcon(
                               onPressed: isUploading
                                   ? null
@@ -422,11 +445,15 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _openProfileEditor(
     BuildContext context,
     WidgetRef ref,
-    Profile profile,
-  ) async {
+    Profile profile, {
+    ProfileEditField? initialField,
+  }) async {
     final updated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profile)),
+      MaterialPageRoute(
+        builder: (_) =>
+            EditProfileScreen(profile: profile, initialField: initialField),
+      ),
     );
 
     if (updated == true) {
@@ -508,12 +535,14 @@ class _ProfileSection extends StatelessWidget {
   final String title;
   final String value;
   final String emptyValue;
+  final VoidCallback onTap;
 
   const _ProfileSection({
     required this.icon,
     required this.title,
     required this.value,
     required this.emptyValue,
+    required this.onTap,
   });
 
   @override
@@ -528,6 +557,48 @@ class _ProfileSection extends StatelessWidget {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Text(displayValue),
+        ),
+        trailing: const Icon(Icons.edit_outlined, size: 18),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _EditableHeaderField extends StatelessWidget {
+  const _EditableHeaderField({
+    required this.value,
+    required this.style,
+    required this.onTap,
+  });
+
+  final String value;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(value, textAlign: TextAlign.center, style: style),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -70,12 +70,14 @@ def test_user_can_create_profile_without_resume():
 
     assert response.status_code == 200
     assert response.json()["resume_text"] == ""
-    assert response.json()["skills"] == "API Testing,SQL"
+    assert response.json()["skills"] == "API Testing, SQL"
 
     loaded = client.get("/profile/me", headers=headers)
 
     assert loaded.status_code == 200
     assert loaded.json()["profession"] == "QA Engineer"
+    assert loaded.json()["skills"] == "API Testing, SQL"
+    assert loaded.json()["preferred_roles"] == "QA Engineer"
 
     app.dependency_overrides.clear()
 

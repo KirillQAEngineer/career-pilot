@@ -72,28 +72,8 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       ApiClient.setToken(token);
-
-      await ApiClient.dio.get(
-        '/auth/me',
-        options: Options(extra: const {'skipUnauthorizedHandler': true}),
-      );
-
       ref.invalidate(currentUserProvider);
       state = const AuthState(isAuthenticated: true, isLoading: false);
-    } on DioException catch (error) {
-      if (error.response?.statusCode == 401) {
-        await _clearSession();
-
-        return;
-      }
-
-      ApiClient.clearToken();
-
-      state = const AuthState(
-        isAuthenticated: false,
-        isLoading: false,
-        error: 'Could not connect to the service. Please try again.',
-      );
     } catch (_) {
       await _clearSession(error: 'Could not restore session');
     }

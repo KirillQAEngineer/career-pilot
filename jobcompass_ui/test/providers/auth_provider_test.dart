@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:jobcompass_ui/core/network/api_client.dart';
+import 'package:jobcompass_ui/providers/account_provider.dart';
 import 'package:jobcompass_ui/providers/auth_provider.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -78,14 +79,24 @@ void main() {
       addTearDown(container.dispose);
 
       container.read(authProvider);
+      await _waitForAuthState(
+        container,
+        (state) => state.isAuthenticated && !state.isLoading,
+      );
+      final accountSubscription = container.listen(
+        currentUserProvider,
+        (previous, next) {},
+        fireImmediately: true,
+      );
+      addTearDown(accountSubscription.close);
       final state = await _waitForAuthState(
         container,
-        (state) => !state.isLoading,
+        (state) => !state.isAuthenticated && !state.isLoading,
       );
       final preferences = await SharedPreferences.getInstance();
 
       expect(state.isAuthenticated, isFalse);
-      expect(state.error, isNull);
+      expect(state.error, contains('expired'));
       expect(preferences.getString('access_token'), isNull);
       expect(ApiClient.dio.options.headers['Authorization'], isNull);
     },
